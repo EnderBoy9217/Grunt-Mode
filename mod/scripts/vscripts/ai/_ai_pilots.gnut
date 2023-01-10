@@ -493,6 +493,8 @@ function NpcPilotEmbarksTitan( entity pilot, entity titan )
 	Assert( !pilot.IsTitan() )
 	Assert( titan.IsTitan() )
 
+	pilot.EndSignal( "OnDeath" )
+	pilot.EndSignal( "OnDestroy" )
 	titan.EndSignal( "OnDestroy" )
 	titan.EndSignal( "OnDeath" )
 
@@ -511,6 +513,8 @@ function NpcPilotEmbarksTitan( entity pilot, entity titan )
 	)
 
 	local isInvulnerable = pilot.IsInvulnerable()
+	if( IsMultiplayer() )
+		isInvulnerable = false
 	pilot.SetInvulnerable()
 	titan.SetInvulnerable()
 
@@ -526,16 +530,16 @@ function NpcPilotEmbarksTitan( entity pilot, entity titan )
 	local pilotAnim = GetAnimFromAlias( titanSubClass, embarkSet.animSet.thirdPersonKneelingAlias )
 	local titanAnim = embarkSet.animSet.titanKneelingAnim
 
-	if ( !titan.ContextAction_IsBusy() ) //might be set from kneeling
+	if ( !titan.ContextAction_IsActive() && !titan.ContextAction_IsBusy() ) //might be set from kneeling
 		titan.ContextAction_SetBusy()
-	if ( !pilot.ContextAction_IsBusy() )
+	if ( !pilot.ContextAction_IsActive() && !pilot.ContextAction_IsBusy() )
 		pilot.ContextAction_SetBusy()
 
 	if ( IsCloaked( pilot ) )
 		pilot.SetCloakDuration( 0, 0, 1.5 )
 
-	//pilot.SetParent( titan, "hijack", false, 0.5 ) //the time is just in case their not exactly at the right starting position
-	EmitSoundOnEntity( titan, embarkSet.audioSet.thirdPersonKneelingAudioAlias )
+	pilot.SetParent( titan, "hijack", false, 0.5 ) //the time is just in case their not exactly at the right starting position
+	//EmitSoundOnEntity( titan, embarkSet.audioSet.thirdPersonKneelingAudioAlias )
 	thread PlayAnim( pilot, pilotAnim, titan, "hijack" )
 	waitthread PlayAnim( titan, titanAnim )
 
@@ -565,8 +569,10 @@ function __NpcPilotDisembarksTitan( pilot, titan )
 	expect entity( pilot )
 	expect entity( titan )
 
-	titan.ContextAction_SetBusy()
-	pilot.ContextAction_SetBusy()
+	if ( !titan.ContextAction_IsActive() && !titan.ContextAction_IsBusy() )
+		titan.ContextAction_SetBusy()
+	if ( !pilot.ContextAction_IsActive() && !pilot.ContextAction_IsBusy() )
+		pilot.ContextAction_SetBusy()
 
 	if ( pilot.GetTitle() != "" )
 	{
@@ -574,6 +580,8 @@ function __NpcPilotDisembarksTitan( pilot, titan )
 	}
 
 	local isInvulnerable = pilot.IsInvulnerable()
+	if( IsMultiplayer() )
+		isInvulnerable = false
 	pilot.SetInvulnerable()
 	titan.SetInvulnerable()
 
@@ -595,7 +603,7 @@ function __NpcPilotDisembarksTitan( pilot, titan )
 	}
 
 //	pilot.SetParent( titan, "hijack" )
-	EmitSoundOnEntity( titan, pilot3pAudio )
+	//EmitSoundOnEntity( titan, pilot3pAudio )
 	thread PlayAnim( titan, titanDisembarkAnim )
 	waitthread PlayAnim( pilot, pilot3pAnim, titan, "hijack" )
 
@@ -711,8 +719,8 @@ entity function NpcTitanBecomesPilot( entity titan )
 	pilot.kv.health 				= titanSoul.soul.seatedNpcPilot.health
 	//pilot.kv.physDamageScale 		= titanSoul.soul.seatedNpcPilot.physDamageScale
 
-	if ( titanSoul.soul.seatedNpcPilot.isInvulnerable )
-		pilot.SetInvulnerable()
+	//if ( titanSoul.soul.seatedNpcPilot.isInvulnerable )
+	//	pilot.SetInvulnerable()
 
 	titan.SetOwner( pilot )
 	NPCFollowsNPC( titan, pilot )
@@ -870,7 +878,7 @@ function __TitanKneelsForPilot( pilot, titan )
 		}
 	)
 
-	if ( !titan.ContextAction_IsBusy() ) //might be set from kneeling
+	if ( !titan.ContextAction_IsActive() && !titan.ContextAction_IsBusy() ) //might be set from kneeling
 		titan.ContextAction_SetBusy()
 	SetStanceKneel( titan.GetTitanSoul() )
 

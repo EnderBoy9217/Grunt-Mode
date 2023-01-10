@@ -177,10 +177,10 @@ void function AiGameModes_SpawnReaper( vector pos, vector rot, int team, string 
 	// nessie fix
 	thread Reaper_Spawnpoint( pos, team, 11.2 )
 
+	wait 10
 	entity reaper = CreateSuperSpectre( team, pos, rot )
 	// reaper highlight
 	Highlight_SetEnemyHighlight( reaper, "enemy_titan" )
-	wait 10
 	SetSpawnOption_Titanfall( reaper )
 	SetSpawnOption_Warpfall( reaper )
 	
@@ -396,27 +396,34 @@ void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot, int team 
 
 	thread DropPodActiveThink( pod, 1 )
 
+	titan.EndSignal( "OnDeath" )
+	titan.EndSignal( "OnDestroy" )
+	pilot.EndSignal( "OnDeath" )
+	pilot.EndSignal( "OnDestroy" )
+
+	OnThreadEnd( 
+		function(): ( pilot, titan )
+		{
+			if( !IsAlive( titan ) )
+				return
+			if( !IsAlive( pilot ) )
+			{
+				thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
+				return
+			}
+		}
+	)
+
 	NpcPilotSetPetTitan( pilot, titan )
 	titan.SetTitle( pilot.GetTitle() + "'s Titan" )
 	titan.WaitSignal( "TitanHotDropComplete" )
+	
 	thread NpcPilotRunsToEmbarkTitan( pilot, titan )
 	wait 2.0
-	if( !IsAlive( titan ) )
-		return
-	if( !IsAlive( pilot ) )
-	{
-		thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
-		return
-	}
+	
 	thread ForceStartTitan( titan, pilot )
 	waitthread NpcPilotRunsToEmbarkTitan( pilot, titan )
-	if( !IsAlive( titan ) )
-		return
-	if( !IsAlive( pilot ) )
-	{
-		thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
-		return
-	}
+	
 	thread NpcPilotEmbarksTitan( pilot, titan )
 	
 		
@@ -847,7 +854,7 @@ function GiveAirDropWeapon( pod , player )
 	}
     //DropModdedWeapons( WEAPONS, pos, MODS )
 	if( player.GetMainWeapons().len() == 3 )
-		player.DropWeapon( player.GetActiveWeapon() )
+		player.DropWeapon( player.GetMainWeapons()[1] )
 	GiveModdedWeapons( player, WEAPONS, MODS )
     SendHudMessage(player, "Got Weapon from Care Package",  -1, 0.3, 255, 255, 0, 255, 0.15, 3, 1)
     usedplayer.append( uid )

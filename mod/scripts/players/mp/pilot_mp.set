@@ -7,9 +7,9 @@
 		subclass					"wallrun"
 
 		// changed for grunts
-		jumpheight					80 // 60
-		
-		gravityscale				0.80
+		jumpheight					100 // 60
+		gravityscale				1.40
+
 		stepheight					18
 		ziplineSpeed				600
 		wallrun                     1

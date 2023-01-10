@@ -2,21 +2,15 @@ untyped
 
 global function BecomesGruntMode_Init
 
-struct {
-	entity intermissionCam
-	array<entity> droppodSpawns
-
-} droppod
+const array<string> RESPAWN_SHIP_ALLOWED_MAPS = [ "mp_wargames", "mp_forwardbase_kodai", "mp_angel_city", "mp_colony02", "mp_homestead", "mp_black_water_canal" ]
 
 void function BecomesGruntMode_Init()
 {
 	PrecacheModel( $"models/humans/grunts/imc_grunt_shield_captain.mdl" )
 
 	AddCallback_OnPlayerRespawned( OnPlayerRespawned )
-	AddCallback_OnPlayerGetsNewPilotLoadout( OnPlayerChangeLoadout)
+	AddCallback_OnPlayerGetsNewPilotLoadout( OnPlayerChangeLoadout )
 	AddCallback_OnPlayerKilled( StartKillerOutline )
-
-	AddSpawnCallback( "info_spawnpoint_droppod_start", AddDroppodSpawn )
 
 	AddSpawnCallback( "npc_soldier", PilotConfig )
 	AddSpawnCallback( "npc_marvin", MarvinConfig )
@@ -25,8 +19,9 @@ void function BecomesGruntMode_Init()
 	AddSpawnCallback( "npc_stalker", StalkerConfig )
 	AddSpawnCallback( "npc_super_spectre", ReaperConfig )
 	AddSpawnCallback( "npc_titan", TitanConfig )
-	AddSpawnCallback( "npc_drone", DroneConfig )
+	//AddSpawnCallback( "npc_drone", DroneConfig )
 	AddSpawnCallback( "npc_gunship", GunshipConfig )
+	AddSpawnCallback( "npc_dropship", DropshipConfig )
 }
 
 //-----------------------------------------------
@@ -63,8 +58,8 @@ void function SpectreConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		soldier.SetMaxHealth( 200 )
-		soldier.SetHealth( 200 )
+		soldier.SetMaxHealth( 150 )
+		soldier.SetHealth( 150 )
 		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
@@ -74,6 +69,8 @@ void function StalkerConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
+		soldier.SetMaxHealth( 200 )
+		soldier.SetHealth( 200 )
 		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
@@ -114,10 +111,21 @@ void function GunshipConfig( entity soldier )
 	}
 }
 
+void function DropshipConfig( entity soldier )
+{
+	if( IsValid( soldier ) )
+	{
+		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+	}
+}
+
 void function OnPlayerRespawned( entity player )
 {	
 	BecomesGrunt_Model( player )
-	SpawnFromDroppod( player )
+	//if( RESPAWN_SHIP_ALLOWED_MAPS.contains( GetMapName() ) )
+	//	RespawnInDropShip( player )
+	//else
+		SpawnFromDroppod( player )
 	thread OnPlayerRespawned_Threaded( player )
 }
 
@@ -155,9 +163,10 @@ void function BecomesGrunt_Loadout( entity player )
 		TakeAllWeapons( player )
 		player.GiveWeapon( primary )
 		player.GiveWeapon( secondary )
-		player.GiveOffhandWeapon( grenade, OFFHAND_ORDNANCE )
+		player.GiveOffhandWeapon( grenade, OFFHAND_ORDNANCE, ["grunt_mode"] )
 		player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, ["grunt_mode"] )
 
+		player.Signal( "ForceStopShield" )
 		if( player.GetTeam() == TEAM_MILITIA )
 		{
 			player.SetModel($"models/humans/grunts/mlt_grunt_lmg.mdl")
@@ -172,7 +181,7 @@ void function BecomesGrunt_Loadout( entity player )
 		SendHudMessage(player, "Respawn as Grunt: No Special Effect",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 
 		Highlight_SetFriendlyHighlight( player, "fw_friendly" )
-		player.kv.gravity = 1.4
+		//player.kv.gravity = 1.4
 		//HideName( player )
 		player.SetNameVisibleToEnemy( false )
 	}
@@ -254,7 +263,7 @@ void function BecomesGrunt_Model( entity player )
 					SendHudMessage(player, "Respawn as Combat Engineer: Two Drones in Inventory",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					if( PlayerHasPassive( player, ePassives.PAS_ORDNANCE_PACK ) )
 						TakePassive( player, ePassives.PAS_ORDNANCE_PACK )
-					player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL )
+					player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
 					player.SetMaxHealth( 100 )
 					break
 				default:
@@ -262,54 +271,4 @@ void function BecomesGrunt_Model( entity player )
 			}
 		}
 	}
-}
-
-void function AddDroppodSpawn( entity spawn )
-{
-	droppod.droppodSpawns.append( spawn )
-}
-
-void function SpawnFromDroppod( entity player )
-{
-	if( GetGameState() == eGameState.Playing )
-	{
-		thread SpawnFromDroppod_Threaded( player )
-	}
-}
-
-void function SpawnFromDroppod_Threaded( entity player )
-{
-	if( IsValid(player) )
-	{
-		/*
-		entity podSpawn
-		if ( droppod.droppodSpawns.len() != 0 )
-			podSpawn = droppod.droppodSpawns.getrandom()
-		else
-			podSpawn = SpawnPoints_GetPilot().getrandom()
-		*/
-		array< entity > points = SpawnPoints_GetDropPod()
-		entity node = points[ GetSpawnPointIndex( points, player.GetTeam() ) ]
-		
-		SpawnPlayerInDropPod( player, node.GetOrigin(), node.GetAngles(), 15 )
-	}
-}
-
-int function GetSpawnPointIndex( array< entity > points, int team )
-{
-	entity zone = DecideSpawnZone_Generic( points, team )
-	
-	if ( IsValid( zone ) )
-	{
-		// 20 Tries to get a random point close to the zone
-		for ( int i = 0; i < 20; i++ )
-		{
-			int index = RandomInt( points.len() )
-		
-			if ( Distance2D( points[ index ].GetOrigin(), zone.GetOrigin() ) < 6000 )
-				return index
-		}
-	}
-	
-	return RandomInt( points.len() )
 }

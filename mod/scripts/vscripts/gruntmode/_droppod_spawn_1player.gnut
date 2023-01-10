@@ -1,16 +1,51 @@
 untyped
 global function DropPodSpawn1Player_Init
+
+global function SpawnFromDroppod
 global function SpawnPlayerInDropPod
 
 struct {
 	array< entity > droppods
 } file
 
+struct {
+	entity intermissionCam
+	array<entity> droppodSpawns
+
+} droppod
+
 void function DropPodSpawn1Player_Init()
 {
 	#if SERVER
+	AddSpawnCallback( "info_spawnpoint_droppod_start", AddDroppodSpawn )
 	//AddCallback_OnRoundEndCleanup( CleanupSpawningDropPods )
 	#endif
+}
+
+void function SpawnFromDroppod( entity player )
+{
+	if( GetGameState() == eGameState.Playing )
+	{
+		thread SpawnFromDroppod_Threaded( player )
+	}
+}
+
+void function SpawnFromDroppod_Threaded( entity player )
+{
+	if( IsValid(player) )
+	{
+		/*
+		entity podSpawn
+		if ( droppod.droppodSpawns.len() != 0 )
+			podSpawn = droppod.droppodSpawns.getrandom()
+		else
+			podSpawn = SpawnPoints_GetPilot().getrandom()
+		*/
+		array< entity > points = SpawnPoints_GetDropPod()
+		entity node = points[ GetSpawnPointIndex( points, player.GetTeam() ) ]
+		
+		SpawnPlayerInDropPod( player, node.GetOrigin(), node.GetAngles(), 15 )
+	}
 }
 
 void function CleanupSpawningDropPods()
@@ -92,4 +127,28 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 		}
 	}
 	#endif
+}
+
+void function AddDroppodSpawn( entity spawn )
+{
+	droppod.droppodSpawns.append( spawn )
+}
+
+int function GetSpawnPointIndex( array< entity > points, int team )
+{
+	entity zone = DecideSpawnZone_Generic( points, team )
+	
+	if ( IsValid( zone ) )
+	{
+		// 20 Tries to get a random point close to the zone
+		for ( int i = 0; i < 20; i++ )
+		{
+			int index = RandomInt( points.len() )
+		
+			if ( Distance2D( points[ index ].GetOrigin(), zone.GetOrigin() ) < 6000 )
+				return index
+		}
+	}
+	
+	return RandomInt( points.len() )
 }

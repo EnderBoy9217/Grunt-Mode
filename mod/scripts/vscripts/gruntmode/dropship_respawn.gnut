@@ -1,0 +1,387 @@
+
+global function RespawnShip_Init
+
+global function RespawnInDropShip
+
+enum eDropshipState
+{
+	Idle,
+	InProgress,
+	Returning
+	_count_
+}
+
+struct RespawnShipStruct
+{
+	int dropshipState
+	array<entity> playersInDropship
+}
+
+array<entity> avaliableRespawnShips
+table < entity, RespawnShipStruct > respawnShipTable
+
+const array<string> DROPSHIP_IDLE_ANIMS_POV = [
+
+	"ptpov_ds_coop_side_intro_gen_idle_B",
+	"ptpov_ds_coop_side_intro_gen_idle_A",
+	"ptpov_ds_coop_side_intro_gen_idle_C",
+	"ptpov_ds_coop_side_intro_gen_idle_D"
+]
+
+const array<string> DROPSHIP_IDLE_ANIMS = [
+
+	"pt_ds_coop_side_intro_gen_idle_B",
+	"pt_ds_coop_side_intro_gen_idle_A",
+	"pt_ds_coop_side_intro_gen_idle_C",
+	"pt_ds_coop_side_intro_gen_idle_D"
+]
+
+const array<string> DROPSHIP_EXIT_ANIMS_POV = [
+	"ptpov_ds_coop_side_intro_gen_exit_B",
+	"ptpov_ds_coop_side_intro_gen_exit_A",
+	"ptpov_ds_coop_side_intro_gen_exit_C",
+	"ptpov_ds_coop_side_intro_gen_exit_D"
+]
+
+const array<string> DROPSHIP_EXIT_ANIMS = [
+	"pt_ds_coop_side_intro_gen_exit_B",
+	"pt_ds_coop_side_intro_gen_exit_A",
+	"pt_ds_coop_side_intro_gen_exit_C",
+	"pt_ds_coop_side_intro_gen_exit_D"
+]
+
+void function RespawnShip_Init()
+{
+    AddCallback_OnPlayerRespawned( RespawnInDropShip )
+}
+
+void function RespawnInDropShip( entity player )
+{
+    print( "triggered dropshipspawn" )
+
+	//if( GetCurrentPlaylistVarInt("dropship_spawn", 0) == 0 )
+	//    return
+	if( GetGameState() != eGameState.Playing)
+		return
+	if( player.IsTitan() )
+		return
+	player.SetInvulnerable()
+
+    bool shouldCreateNewShip = false
+    if( avaliableRespawnShips.len() == 0 )
+        shouldCreateNewShip = true
+    else
+    {
+        bool atLeastOneShipAvaliable
+        foreach( entity dropship in avaliableRespawnShips )
+        {
+            if( !IsValid( dropship ) )
+                continue
+			if( dropship.GetTeam() != player.GetTeam() )
+				continue
+            if( respawnShipTable[dropship].playersInDropship.len() < 4 )
+                atLeastOneShipAvaliable = true
+        }
+        if( !atLeastOneShipAvaliable )
+            shouldCreateNewShip = true
+    }
+
+    entity dropship
+
+	if( shouldCreateNewShip )
+	{
+        dropship = CreateRespawnShip( player.GetTeam() )
+		thread RespawnShipThink( dropship )
+	}
+    else
+    {
+        foreach( entity chosenShip in avaliableRespawnShips )
+        {
+			if( !IsValid( chosenShip ) )
+				continue
+            if( chosenShip.GetTeam() == player.GetTeam() )
+                dropship = chosenShip
+        }
+    }
+
+	if( !IsValid( dropship ) )
+	{
+		dropship = CreateRespawnShip( player.GetTeam() )
+		thread RespawnShipThink( dropship )
+	}
+
+    RespawnShipStruct curShipStruct = respawnShipTable[dropship]
+	//Attach player
+	FirstPersonSequenceStruct idleSequence
+	idleSequence.firstPersonAnim = DROPSHIP_IDLE_ANIMS_POV[ curShipStruct.playersInDropship.len() ]
+	idleSequence.thirdPersonAnim = DROPSHIP_IDLE_ANIMS[ curShipStruct.playersInDropship.len() ]
+	idleSequence.attachment = "ORIGIN"
+	idleSequence.teleport = true
+	idleSequence.viewConeFunction = ViewConeWide
+	idleSequence.hideProxy = true
+
+	if ( player.GetTeam() == TEAM_MILITIA)
+	{
+	    thread FirstPersonSequence( idleSequence, player, dropship )
+	    curShipStruct.playersInDropship.append( player )
+	}
+	else
+	{
+		thread FirstPersonSequence( idleSequence, player, dropship )
+	    curShipStruct.playersInDropship.append( player )
+	}
+
+    thread TrackPlayerLifeStat( player, dropship )
+
+    if( curShipStruct.playersInDropship.len() >= 4 )
+        avaliableRespawnShips.removebyvalue( dropship )
+}
+
+void function TrackPlayerLifeStat( entity player, entity dropship )
+{
+    player.EndSignal( "OnDeath" )
+    player.EndSignal( "OnDestroy" )
+    dropship.EndSignal( "OnDeath" )
+    dropship.EndSignal( "OnDestroy" )
+
+    RespawnShipStruct curShipStruct = respawnShipTable[dropship]
+    OnThreadEnd(
+        function(): ( player, curShipStruct )
+        {
+            if( IsValid( player ) )
+            {
+                player.Anim_Stop()
+				player.ClearInvulnerable()
+                curShipStruct.playersInDropship.removebyvalue( player )
+            }
+        }
+    )
+
+    dropship.WaitSignal( "deploy" )
+    WaittillAnimDone( player )
+	if( GruntPosInSolid( player, player.GetOrigin() ) )
+	{
+		vector TargetPos = FindNearestSafePos_ForGrunts( player, player.GetOrigin(), 1 )
+		player.SetOrigin( TargetPos )
+	}
+}
+
+entity function CreateRespawnShip( int team )
+{
+    array< entity > spawnPoint = SpawnPoints_GetDropPod()
+	entity node = spawnPoint[ GetSpawnPointIndex( spawnPoint, team ) ]
+	entity dropship = CreateDropship( team, node.GetOrigin() + < 0,0,100 >, < 0,RandomInt( 360 ), 0 > )
+	dropship.SetMaxHealth( 25000 )
+	dropship.SetHealth( 25000 )
+	dropship.SetShieldHealthMax( 2000 )
+	dropship.SetShieldHealth( 2000 )
+	AddEntityCallback_OnKilled( dropship, RespawnShipKilled )
+
+    return dropship
+}
+
+void function RespawnShipKilled( entity dropship, var damageInfo )
+{
+	avaliableRespawnShips.removebyvalue( dropship )
+	foreach ( entity player in respawnShipTable[dropship].playersInDropship )
+	{
+		if ( IsValid( player ) )
+		{
+			player.ClearParent()
+			player.Die( DamageInfo_GetAttacker( damageInfo ), DamageInfo_GetWeapon( damageInfo ), { damageSourceId = eDamageSourceId.evac_dropship_explosion, scriptType = DF_GIB } )
+		}
+	}
+}
+
+void function RespawnShipThink( entity dropship )
+{
+	dropship.EndSignal( "OnDestroy" )
+    int team = dropship.GetTeam()
+
+    RespawnShipStruct shipStruct
+    respawnShipTable[dropship] <- shipStruct
+	shipStruct.dropshipState = eDropshipState.InProgress
+    avaliableRespawnShips.append( dropship )
+    
+	if ( team == TEAM_MILITIA )
+	{
+	    dropship.SetModel( $"models/vehicle/crow_dropship/crow_dropship_hero.mdl" )
+		dropship.SetValueForModelKey( $"models/vehicle/crow_dropship/crow_dropship_hero.mdl" )
+	}
+	else
+	{
+		dropship.SetModel( $"models/vehicle/goblin_dropship/goblin_dropship_hero.mdl" )
+		dropship.SetValueForModelKey( $"models/vehicle/goblin_dropship/goblin_dropship.mdl" )
+	}
+	DispatchSpawn( dropship )
+
+    if ( team == TEAM_MILITIA )
+	    dropship.SetModel( $"models/vehicle/crow_dropship/crow_dropship_hero.mdl" )
+	else
+		dropship.SetModel( $"models/vehicle/goblin_dropship/goblin_dropship_hero.mdl" )
+
+	thread PlayAnim( dropship, RespawnShipGetAnimation() )
+
+	array<string> anims = GetRandomDropshipDropoffAnims()
+
+	//thread WarpinEffect( $"models/vehicle/crow_dropship/crow_dropship.mdl", anims[0], file.dropship.GetOrigin(),f ile.dropship.GetAngles() ) //this does not work
+	thread WarpInEffectRespawnShip( dropship )
+    dropship.WaitSignal( "deploy" )
+	shipStruct.dropshipState = eDropshipState.Returning
+    avaliableRespawnShips.removebyvalue( dropship )
+
+	foreach( int i,entity player in shipStruct.playersInDropship )
+	{
+        if( IsAlive( player ) )
+		    thread RespawnShipDropPlayer( player, dropship, i )
+	}
+	shipStruct.playersInDropship.clear()
+
+	wait 8
+	shipStruct.dropshipState = eDropshipState.Idle
+}
+
+void function RespawnShipDropPlayer( entity player, entity dropship, int playerDropshipIndex )
+{
+	player.EndSignal( "OnDeath" )
+	player.EndSignal( "OnDestroy" )
+    dropship.EndSignal( "OnDestroy" )
+
+    RespawnShipStruct curShipStruct = respawnShipTable[dropship]
+
+	OnThreadEnd(
+		function() : ( player, curShipStruct )
+		{
+			try{
+			    curShipStruct.playersInDropship.removebyvalue( player )
+			}catch(err){}
+		}
+	)
+	FirstPersonSequenceStruct jumpSequence
+	jumpSequence.firstPersonAnim = DROPSHIP_EXIT_ANIMS_POV[ playerDropshipIndex ]
+	jumpSequence.thirdPersonAnim = DROPSHIP_EXIT_ANIMS[ playerDropshipIndex ]
+	jumpSequence.attachment = "ORIGIN"
+	jumpSequence.blendTime = 0.0
+	jumpSequence.viewConeFunction = ViewConeWide
+
+	thread FirstPersonSequence( jumpSequence, player, dropship )
+	WaittillAnimDone( player )
+	player.ClearParent()
+	ClearPlayerAnimViewEntity( player )
+	player.ClearInvulnerable()
+	if( GruntPosInSolid( player, player.GetOrigin() ) )
+	{
+		vector TargetPos = FindNearestSafePos_ForGrunts( player, player.GetOrigin(), 1 )
+		player.SetOrigin( TargetPos )
+	}
+}
+
+void function WarpInEffectRespawnShip( entity dropship )
+{
+    dropship.EndSignal( "OnDestroy" )
+	float sfxWait = 0.1
+	float totalTime = WARPINFXTIME
+	float preWaitTime = 0.16 // give it some time so it's actually playing anim, and we can get it's "origin" attatch
+	string sfx = "dropship_warpin"
+
+	wait preWaitTime
+
+	int attach = dropship.LookupAttachment( "origin" )
+	vector origin = dropship.GetAttachmentOrigin( attach )
+	vector angles = dropship.GetAttachmentAngles( attach )
+
+	entity fx = PlayFX( FX_GUNSHIP_CRASH_EXPLOSION_ENTRANCE, origin, angles )
+	fx.FXEnableRenderAlways()
+	fx.DisableHibernation()
+
+	wait sfxWait
+	EmitSoundAtPosition( TEAM_UNASSIGNED, origin, sfx )
+
+	wait totalTime - sfxWait
+}
+
+string function RespawnShipGetAnimation()
+{
+	//if( file.animationOverride!="" )
+	//    return file.animationOverride
+
+	switch( GetMapName() )
+	{
+	case "mp_homestead":
+		return "dropship_coop_respawn_homestead"
+	case "mp_lagoon":
+		return "dropship_coop_respawn_lagoon"
+	case "mp_overlook":
+		return "dropship_coop_respawn_overlook"
+	case "mp_outpost":
+		return "dropship_coop_respawn_outpost"
+	case "mp_wargames":
+		return "dropship_coop_respawn_wargames"
+	case "mp_digsite":
+		return "dropship_coop_respawn_digsite"
+	}
+	return "dropship_coop_respawn"
+}
+
+vector function FindNearestSafePos_ForGrunts(entity player, vector targetPos, int severity)
+{
+    if(severity >= 250)
+    {
+        print("[ANTI-STUCK] Too many times tried!")
+        SendHudMessage(player, "Stucked! \nTried to move upward", -1, -0.35, 255, 255, 100, 255, 0, 5, 0)
+       	return < player.GetOrigin().x,player.GetOrigin().y,player.GetOrigin().z+1500 >
+    }
+
+    if( !GruntPosInSolid( player, < targetPos.x, targetPos.y+severity, targetPos.z > ) )
+        return < targetPos.x, targetPos.y+severity, targetPos.z >
+
+    if( !GruntPosInSolid( player, < targetPos.x, targetPos.y-severity, targetPos.z > ) )
+        return < targetPos.x, targetPos.y-severity, targetPos.z >
+ 
+    if( !GruntPosInSolid( player, < targetPos.x+severity, targetPos.y, targetPos.z > ) )
+        return < targetPos.x+severity, targetPos.y, targetPos.z >
+
+    if( !GruntPosInSolid( player, < targetPos.x-severity, targetPos.y, targetPos.z > ) )
+        return < targetPos.x-severity, targetPos.y, targetPos.z >
+
+    return FindNearestSafePos_ForGrunts( player, targetPos, severity+5 )
+}
+
+bool function GruntPosInSolid( entity player, vector targetPos )
+{
+    int solidMask = TRACE_MASK_PLAYERSOLID
+    vector mins
+    vector maxs
+    int collisionGroup = TRACE_COLLISION_GROUP_PLAYER
+    array<entity> ignoreEnts = []
+    ignoreEnts.append( player ) //in case we want to check player's current pos
+    TraceResults result
+
+    mins = player.GetPlayerMins()
+    maxs = player.GetPlayerMaxs()
+    result = TraceHull( targetPos, targetPos + Vector( 0, 0, 1), mins, maxs, ignoreEnts, solidMask, collisionGroup )
+    if ( result.startSolid )
+        return true
+
+    return false
+
+}
+
+int function GetSpawnPointIndex( array< entity > points, int team )
+{
+	entity zone = DecideSpawnZone_Generic( points, team )
+
+	if ( IsValid( zone ) )
+	{
+		// 20 Tries to get a random point close to the zone
+		for ( int i = 0; i < 20; i++ )
+		{
+			int index = RandomInt( points.len() )
+
+			if ( Distance2D( points[ index ].GetOrigin(), zone.GetOrigin() ) < 6000 )
+				return index
+		}
+	}
+
+	return RandomInt( points.len() )
+}

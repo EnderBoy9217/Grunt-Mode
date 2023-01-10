@@ -2,7 +2,7 @@ global function AiPersonalShield
 global function ActivatePersonalShield
 const FX_DRONE_SHIELD_WALL_HUMAN 	= $"P_drone_shield_wall_sm"
 const SHIELD_BREAK_FX = $"P_xo_armor_break_CP"
-const SHIELD_HEALTH = 300
+const SHIELD_HEALTH = 200
 global const AI_PERSONAL_SHIELD_PAIN_SHIELD_STYLE = true
 const float PERSONAL_SHIELD_HEALTH_FRAC_DAMAGED = 0.5  // below what frac of total health will the personal shield owner want to chatter about shield damage?
 
@@ -17,6 +17,8 @@ void function AiPersonalShield()
 	PrecacheParticleSystem( FX_DRONE_SHIELD_WALL_HUMAN )
 	PrecacheParticleSystem( SHIELD_BREAK_FX )
 	AddSyncedMeleeServerCallback( GetSyncedMeleeChooser( "human", "human" ), DisableShieldOnExecution )
+
+	RegisterSignal( "ForceStopShield" )
 }
 
 void function DisableShieldOnExecution( SyncedMeleeChooser actions, SyncedMelee action, entity player, entity target )
@@ -31,6 +33,7 @@ void function DisableShieldOnExecution( SyncedMeleeChooser actions, SyncedMelee 
 void function ActivatePersonalShield( entity owner )
 {
 	owner.EndSignal( "OnDeath" )
+	owner.EndSignal( "ForceStopShield" )
 	for ( ;; )
 	{
 		waitthread ActivatePersonalShield_Recreate( owner )
@@ -168,6 +171,7 @@ entity function ActivatePersonalShield_Recreate( entity owner )
 	owner.EndSignal( "OnDeath" )
 	owner.EndSignal( "ArcStunned" )
 	mover.EndSignal( "OnDestroy" )
+	owner.EndSignal( "ForceStopShield" )
 	#if MP
 	shieldWallFX.EndSignal( "OnDestroy" )
 	#endif

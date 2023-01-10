@@ -1,0 +1,31 @@
+WeaponData
+{
+	Mods
+	{
+		pas_ordnance_pack
+		{
+		}
+		bc_frag_refill
+		{
+		}
+		burn_mod_frag_grenade
+		{
+		}
+		spree_lvl1_frag_grenade
+		{
+		}
+		spree_lvl2_frag_grenade
+		{
+		}
+		spree_lvl3_frag_grenade
+		{
+		}
+		sp_disable_arc_indicator
+		{
+		}
+		grunt_mode
+		{
+			"regen_ammo_refill_rate"		"*0"
+		}
+	}
+}

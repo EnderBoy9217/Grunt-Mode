@@ -13,9 +13,9 @@ const GUNSHIPS_PER_TEAM = 2
 
 const LEVEL_SPECTRES = 0
 const LEVEL_STALKERS = 50
-const LEVEL_REAPERS = 150
-const LEVEL_GUNSHIPS = 250
-const LEVEL_TITANS = 300
+const LEVEL_REAPERS = 125
+const LEVEL_GUNSHIPS = 200
+const LEVEL_TITANS = 250
 
 const array<string> WEAPONS = [ "mp_weapon_alternator_smg", "mp_weapon_arc_launcher", "mp_weapon_autopistol", "mp_weapon_car", "mp_weapon_defender", "mp_weapon_dmr", "mp_weapon_doubletake", "mp_weapon_epg", "mp_weapon_esaw", "mp_weapon_g2", "mp_weapon_hemlok", "mp_weapon_hemlok_smg", "mp_weapon_lmg", "mp_weapon_lstar", "mp_weapon_mastiff", "mp_weapon_mgl", "mp_weapon_pulse_lmg", "mp_weapon_r97", "mp_weapon_rocket_launcher", "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_semipistol", "mp_weapon_shotgun", "mp_weapon_shotgun_pistol", "mp_weapon_smart_pistol", "mp_weapon_smr", "mp_weapon_sniper", "mp_weapon_softball", "mp_weapon_vinson", "mp_weapon_wingman", "mp_weapon_wingman_n" ]
 const array<string> MODS = [ "pas_run_and_gun", "threat_scope", "pas_fast_ads", "pas_fast_reload", "extended_ammo", "pas_fast_swap" ]
@@ -24,7 +24,7 @@ struct
 {
 	// Due to team based escalation everything is an array
 	array< int > levels = [ LEVEL_SPECTRES, LEVEL_SPECTRES ]
-	array< array< string > > podEntities = [ [ "npc_spectre" ], [ "npc_spectre" ] ]
+	array< array< string > > podEntities = [ [ "npc_spectre", "npc_spectre", "npc_stalker" ], [ "npc_spectre", "npc_spectre", "npc_stalker" ] ]
 	array< bool > reapers = [ false, false ]
 
 	array< bool > marvins = [ false, false ]
@@ -54,7 +54,7 @@ void function GamemodeAITdm_Init()
 	if ( GetCurrentPlaylistVarInt( "aitdm_archer_grunts", 0 ) == 0 )
 	{
 		AiGameModes_SetGruntWeapons( [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og" ] )
-		AiGameModes_SetSpectreWeapons( [ "mp_weapon_defender", "mp_weapon_epg", "mp_weapon_rocket_launcher", "mp_weapon_smr", "mp_weapon_sniper" ] )
+		AiGameModes_SetSpectreWeapons( [ "mp_weapon_defender", "mp_weapon_sniper", "mp_weapon_doubletake", "mp_weapon_hemlok_smg" ] )
 	}
 	else
 	{
@@ -119,6 +119,9 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 
 	if ( victim.GetClassName() == "npc_spectre" )
 		score = 2
+
+	if ( victim.GetClassName() == "npc_super_spectre" )
+		score = 5
 
 	if ( victim.GetClassName() == "npc_soldier" )
 		score = 5
@@ -270,7 +273,7 @@ void function Spawner( int team )
 
 				array< entity > points = SpawnPoints_GetDropPod()
 				entity node = points[ GetSpawnPointIndex( points, team ) ]
-				thread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, "npc_spectre", SquadHandler )
+				thread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent, SquadHandler )
 			}
 		}
 		else

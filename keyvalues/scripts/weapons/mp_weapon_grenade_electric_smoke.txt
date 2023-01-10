@@ -1,0 +1,28 @@
+WeaponData
+{
+	Mods
+	{
+		burn_mod_grenade_electric_smoke
+		{
+		}
+		pas_ordnance_pack
+		{
+		}
+		spree_lvl1_grenade_smoke
+		{
+		}
+		spree_lvl2_grenade_smoke
+		{
+		}
+		spree_lvl3_grenade_smoke
+		{
+		}
+		sp_disable_arc_indicator
+		{
+		}
+		grunt_mode
+		{
+			"regen_ammo_refill_rate"		"*0"
+		}
+	}
+}

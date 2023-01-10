@@ -30,78 +30,9 @@ playlists
 				gamemode_bullet_005	#GAMEMODE_BULLET_TDM_005
 			}
 		}
-		ps
-		{
-			inherit defaults
-			vars
-			{
-				name #PL_pilot_skirmish
-				lobbytitle #PL_pilot_skirmish_lobby
-				description #PL_pilot_skirmish_desc
-				hint #PL_pilot_skirmish_hint
-				abbreviation #PL_pilot_skirmish_abbr
-				image ps
-				spawn_zone_enabled 1
-				color		"193 23 23 255"
-
-				gamemode_score_hint #GAMEMODE_SCORE_HINT_PS
-				gamemode_bullet_001	#GAMEMODE_BULLET_PS_001
-				gamemode_bullet_002	#GAMEMODE_BULLET_PS_002
-				gamemode_bullet_003	#GAMEMODE_BULLET_PS_003
-				gamemode_bullet_004	#GAMEMODE_BULLET_PS_004
-				gamemode_bullet_005	#GAMEMODE_BULLET_PS_005
-			}
-		}
-		ffa
-		{
-			inherit defaults
-			vars
-			{
-				name #PL_ffa
-				lobbytitle #PL_ffa_lobby
-				description #PL_ffa_desc
-				hint #PL_ffa_hint
-				abbreviation #PL_ffa_abbr
-				image ffa
-				at_turrets_enabled 1
-				waiting_for_players_countdown_seconds 1
-				waiting_for_players_percentage_desired 10
-				color		"246 127 1 255"
-
-				gamemode_score_hint #GAMEMODE_SCORE_HINT_FFA
-				gamemode_bullet_001	#GAMEMODE_BULLET_FFA_001
-				gamemode_bullet_002	#GAMEMODE_BULLET_FFA_002
-				gamemode_bullet_003	#GAMEMODE_BULLET_FFA_003
-				gamemode_bullet_004	#GAMEMODE_BULLET_FFA_004
-				gamemode_bullet_005	#GAMEMODE_BULLET_FFA_005
-			}
-		}
 	}
 	Playlists
 	{
-		ps
-		{
-			gamemodes
-			{
-				ps
-				{
-					maps
-					{
-						mp_glitch 1
-						mp_angel_city 1
-						mp_black_water_canal 1
-						mp_forwardbase_kodai 1
-						mp_drydock 1
-						mp_eden 1
-						mp_colony02 1
-                        mp_relic02 1
-						mp_grave 1
-						mp_thaw 1
-						mp_homestead 1
-					}
-				}
-			}
-		}
 		aitdm
 		{
 			inherit defaults
