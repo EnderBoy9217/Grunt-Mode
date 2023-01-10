@@ -224,9 +224,9 @@ void function DelayedRestoreBattleChatter( string uid, float delay )
 void function OnPlayerRespawned( entity player )
 {	
 	BecomesGrunt_Model( player )
-	if( GetZiplineDropshipSpawns().len() != 0 )
-		RespawnInDropShip( player )
-	else
+	//if( GetZiplineDropshipSpawns().len() != 0 )
+	//	RespawnInDropShip( player )
+	//else
 		SpawnFromDroppod( player )
 	thread OnPlayerRespawned_Threaded( player )
 }
