@@ -1,0 +1,33 @@
+WeaponData
+{
+
+
+	Mods
+	{
+		npc_elite_weapon
+		{
+			// Damage - When Used by NPCs
+			"npc_damage_near_distance"						"2700"
+			"npc_damage_far_distance" 						"3200"
+			"npc_damage_near_value"   						"93"
+			"npc_damage_far_value"							"85"
+			"npc_damage_near_value_titanarmor"				"93"
+			"npc_damage_far_value_titanarmor" 				"85"
+
+			// NPC
+			"proficiency_poor_spreadscale"					"6.0"
+			"proficiency_average_spreadscale" 				"5.0"
+			"proficiency_good_spreadscale"					"4.0"
+			"proficiency_very_good_spreadscale"   			"3.1"
+			"proficiency_perfect_spreadscale" 				"2.3"
+
+			"npc_rest_time_between_bursts_min"				"0.2"
+			"npc_rest_time_between_bursts_max"				"0.3"
+			"npc_min_range"   								"0"
+			"npc_max_range"   								"10000"
+			"npc_min_burst"   								"10"
+			"npc_max_burst"   								"10"
+			"npc_directed_fire_ang_limit_cos"				"0.866"	// 30 degree
+		}
+	}
+}

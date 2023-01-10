@@ -1,0 +1,73 @@
+WeaponData
+{
+	Mods
+	{
+		iron_sights
+		{
+		}
+		hcog
+		{
+		}
+		holosight
+		{
+		}
+		redline_sight
+		{
+		}
+		threat_scope
+		{
+		}
+		smart_lock
+		{
+		}
+		pro_screen
+		{
+		}
+		extended_ammo
+		{
+		}
+		tactical_cdr_on_kill
+		{
+		}
+		pas_fast_reload
+		{
+		}
+		pas_run_and_gun
+		{
+		}
+		pas_fast_ads
+		{
+		}
+		pas_fast_swap
+		{
+		}
+		burn_mod_alternator_smg
+		{
+		}
+		npc_elite_weapon
+		{
+			// NPC
+			"proficiency_poor_spreadscale"					"5.0"
+			"proficiency_average_spreadscale" 				"3.0"
+			"proficiency_good_spreadscale"					"3.0"
+			"proficiency_very_good_spreadscale"   			"2.5"
+			"proficiency_perfect_spreadscale" 				"1.0"
+
+			"npc_min_engage_range"							"0"
+			"npc_max_engage_range"							"750"
+			"npc_min_engage_range_heavy_armor"				"500"
+			"npc_max_engage_range_heavy_armor"				"1000"
+
+			"npc_min_burst"   								"10"
+			"npc_max_burst"   								"20"
+			"npc_rest_time_between_bursts_min"				"0.9"
+			"npc_rest_time_between_bursts_max"				"1.0"
+
+			// Damage - When Used by NPCs
+			"npc_damage_near_value"   						"35"
+			"npc_damage_far_value"							"18"
+
+			"npc_max_range"   								"2500"
+		}
+	}
+}

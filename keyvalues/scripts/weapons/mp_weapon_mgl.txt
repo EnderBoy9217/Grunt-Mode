@@ -1,0 +1,71 @@
+WeaponData
+{
+
+	Mods
+	{
+		extended_ammo
+		{
+		}
+		pro_screen
+		{
+		}
+		pas_fast_reload
+		{
+		}
+		burn_mod_mgl
+		{
+		}
+		ar_trajectory
+		{
+		}
+		pas_fast_ads
+		{
+		}
+		pas_fast_swap
+		{
+		}
+		tactical_cdr_on_kill
+		{
+		}
+		pas_run_and_gun
+		{
+		}
+		at_unlimited_ammo
+        {
+        }
+		npc_elite_weapon
+		{
+			"npc_self_explosion_safety"						"0"
+			"npc_miss_fast_player"							"0"
+
+			// Damage - When Used by NPCs
+			"npc_damage_near_value"   						"20"
+			"npc_damage_far_value"							"20"
+			"npc_damage_near_value_titanarmor"				"330"
+			"npc_damage_far_value_titanarmor" 				"330"
+			"npc_explosion_damage"							"35"
+			"npc_explosion_damage_heavy_armor"				"70"
+			"npc_damage_near_distance"						"100"
+			"npc_damage_far_distance" 						"1500"
+
+			"npc_min_engage_range"							"100"
+			"npc_max_engage_range"							"2000"
+			"npc_min_engage_range_heavy_armor"				"500"
+			"npc_max_engage_range_heavy_armor"				"3500"
+			"npc_min_range"   								"0"
+			"npc_max_range"   								"8000"
+
+			"npc_min_burst"   								"3"
+			"npc_max_burst"   								"3"
+			"npc_rest_time_between_bursts_min"				"2.0"
+			"npc_rest_time_between_bursts_max"				"3.5"
+
+			// NPC
+			"proficiency_poor_spreadscale"					"10.0"
+			"proficiency_average_spreadscale" 				"10.0"
+			"proficiency_good_spreadscale"					"3.3"
+			"proficiency_very_good_spreadscale"   			"3.3"
+			"proficiency_perfect_spreadscale" 				"2.0"
+		}
+	}
+}

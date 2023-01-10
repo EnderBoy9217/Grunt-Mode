@@ -1,0 +1,79 @@
+WeaponData
+{
+
+	Mods
+	{
+		iron_sights
+		{
+		}
+		scope_4x
+		{	
+		}
+		extended_ammo
+		{
+		}
+		stabilizer
+		{
+		}
+		ricochet
+		{
+		}
+        slammer
+        {
+        }
+		threat_scope
+		{
+		}
+		pro_screen
+		{
+		}
+		tactical_cdr_on_kill
+		{
+		}
+        pas_fast_reload
+        {
+        }
+		pas_fast_ads
+		{
+		}
+		pas_fast_swap
+		{
+		}
+		burn_mod_sniper
+		{
+		}
+        pve_elite
+        {
+        }
+		npc_elite_weapon
+		{
+			// Damage - When Used by NPCs
+			"npc_damage_near_value"   						"350"
+			"npc_damage_far_value"							"350"
+			"npc_damage_near_value_titanarmor"				"430"
+			"npc_damage_far_value_titanarmor" 				"430"
+
+			"npc_accuracy_multiplier_pilot"					"1.0"
+
+			"npc_suppress_lsp_allowed"						"0"
+
+			// NPC
+			"proficiency_poor_spreadscale"					"3.0"
+			"proficiency_average_spreadscale" 				"2.2"
+			"proficiency_good_spreadscale"					"2.0"
+			"proficiency_very_good_spreadscale"   			"1.5"
+
+			"npc_min_engage_range"							"500"
+			"npc_max_engage_range"							"8000"
+			"npc_min_engage_range_heavy_armor"				"500"
+			"npc_max_engage_range_heavy_armor"				"8000"
+			"npc_min_range"   								"0"
+			"npc_max_range"   								"8000"
+
+			"npc_min_burst"									"1"
+			"npc_max_burst"									"1"
+			"npc_rest_time_between_bursts_min"				"2.0"
+			"npc_rest_time_between_bursts_max"				"3.0"
+		}
+	}
+}

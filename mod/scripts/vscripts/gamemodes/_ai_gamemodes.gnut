@@ -1,0 +1,1018 @@
+untyped
+
+global function AiGameModes_Init
+
+global function AiGameModes_SetGruntWeapons
+global function AiGameModes_SetSpectreWeapons
+
+global function AiGameModes_SpawnDropShip
+global function AiGameModes_SpawnDropPod
+global function AiGameModes_SpawnReaper
+global function AiGameModes_SpawnTitan
+
+global function AiGameModes_SpawnTitanBT
+
+global function AiGameModes_SpawnNPC
+global function AiGameModes_SpawnTitanRandom
+global function AiGameModes_SpawnGunShip
+
+global function AiGameModes_SpawnPilotCanEmbark
+global function AiGameModes_SpawnPilotWithTitan
+
+global function AiGameModes_SpawnDropPodToGetWeapons
+global function AiGameModes_SpawnDropPodWithWeapons
+global function AiGameModes_SpawnReaperDorpsWeapons
+
+global function GetValidIntroDropShipSpawn
+
+
+const INTRO_DROPSHIP_CUTOFF = 2000
+
+struct
+{
+	array< string > gruntWeapons = [ "mp_weapon_rspn101" ]
+	array< string > spectreWeapons = [ "mp_weapon_hemlok_smg" ]
+} file
+
+const array<string> WEAPONS = [ "mp_weapon_alternator_smg", "mp_weapon_arc_launcher", "mp_weapon_autopistol", "mp_weapon_car", "mp_weapon_defender", "mp_weapon_dmr", "mp_weapon_doubletake", "mp_weapon_epg", "mp_weapon_esaw", "mp_weapon_g2", "mp_weapon_hemlok", "mp_weapon_hemlok_smg", "mp_weapon_lmg", "mp_weapon_lstar", "mp_weapon_mastiff", "mp_weapon_mgl", "mp_weapon_pulse_lmg", "mp_weapon_r97", "mp_weapon_rocket_launcher", "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_semipistol", "mp_weapon_shotgun", "mp_weapon_shotgun_pistol", "mp_weapon_smart_pistol", "mp_weapon_smr", "mp_weapon_sniper", "mp_weapon_softball", "mp_weapon_vinson", "mp_weapon_wingman", "mp_weapon_wingman_n" ]
+const array<string> MODS = [ "pas_run_and_gun", "threat_scope", "pas_fast_ads", "pas_fast_reload", "extended_ammo", "pas_fast_swap" ]
+
+const table< string, int > ANTITITANS = { ["mp_weapon_arc_launcher"]= 0, ["mp_weapon_mgl"]= 1, ["mp_weapon_rocket_launcher"]= 2 }
+const table< string, int > DEFENDER = { ["mp_weapon_defender"]= 0 }
+const table< string, int > PISTOLS = { ["mp_weapon_autopistol"]= 0, ["mp_weapon_semipistol"]= 1, ["mp_weapon_smart_pistol"]= 2, ["mp_weapon_wingman"]= 3, ["mp_weapon_wingman_n"]= 4, ["mp_weapon_shotgun_pistol"]= 5 }
+const table< string, int > SNIPERS = { ["mp_weapon_dmr"]= 0, ["mp_weapon_sniper"]= 1, ["mp_weapon_doubletake"]= 2 }
+const table< string, int > LAUNCHERS = { ["mp_weapon_smr"]= 0, ["mp_weapon_epg"]= 1, ["mp_weapon_pulse_lmg"]= 2, ["mp_weapon_softball"]= 3 }
+
+const array< string > ANTITAN_MODS = [ "pas_fast_ads", "pas_fast_swap", "pas_fast_reload", "extended_ammo" ]
+const array< string > DEFENDER_MODS = [ "pas_run_and_gun", "pas_fast_ads", "pas_fast_swap", "pas_fast_reload", "extended_ammo" ]
+const array< string > PISTOL_MODS = [ "pas_run_and_gun", "pas_fast_ads", "pas_fast_swap", "pas_fast_reload", "extended_ammo" ]
+const array< string > SNIPER_MODS = [ "pas_fast_ads", "pas_fast_swap", "pas_fast_reload", "extended_ammo" ]
+const array< string > LAUNCHER_MODS = [ "pas_run_and_gun", "pas_fast_ads", "pas_fast_swap", "pas_fast_reload", "extended_ammo" ]
+
+const asset CAREPACKAGE_MODEL = $"models/vehicle/escape_pod/escape_pod.mdl"
+
+array< string > usedplayer = []
+
+void function AiGameModes_Init()
+{
+	ProwlerPrecache()
+	PrecacheModel( CAREPACKAGE_MODEL )
+
+	// no need since we already got these in _ai_pilots.gnut
+	AddCallback_OnNpcPilotBecomesTitan( OnNpcPilotBecomesTitan )
+	AddCallback_OnNpcTitanBecomesPilot( OnNpcTitanBecomesPilot )
+	RegisterSignal( "ForceStartMove" )
+	//AddCallback_OnNpcPilotBecomesTitan( NpcPilotBecomesTitan )
+	//AddCallback_OnNpcTitanBecomesPilot( NpcTitanBecomesPilot )
+}
+
+void function ProwlerPrecache()
+{
+	PrecacheModel($"models/creatures/prowler/prowler_corpse_static_01.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_02.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_05.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_06.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_07.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_08.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_09.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_10.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_corpse_static_12.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_dead_static_07.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_dead_static_08.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_dead_static_09.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_dead_static_10.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_dead_static_11.mdl")
+    PrecacheModel($"models/creatures/prowler/prowler_death1_static.mdl")
+    PrecacheModel($"models/creatures/prowler/r2_prowler.mdl")
+}
+
+//------------------------------------------------------
+
+void function AiGameModes_SetGruntWeapons( array< string > weapons )
+{
+	file.gruntWeapons = weapons
+}
+
+void function AiGameModes_SetSpectreWeapons( array< string > weapons )
+{
+	file.spectreWeapons = weapons
+}
+
+//------------------------------------------------------
+
+void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int count, void functionref( array<entity> guys ) squadHandler = null )
+{  
+	string squadName = MakeSquadName( team, UniqueString( "" ) )
+
+	CallinData drop
+	drop.origin 		= pos
+	drop.yaw 			  = rot.y
+	drop.dist 			= 768
+	drop.team 			= team
+	drop.squadname 	= squadName
+	SetDropTableSpawnFuncs( drop, CreateSoldier, count )
+	SetCallinStyle( drop, eDropStyle.ZIPLINE_NPC )
+  
+	thread RunDropshipDropoff( drop )
+	
+	WaitSignal( drop, "OnDropoff" )
+	
+	array< entity > guys = GetNPCArrayBySquad( squadName )
+	
+	foreach ( guy in guys )
+	{
+		ReplaceWeapon( guy, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
+		guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+	}
+	
+	if ( squadHandler != null )
+		thread squadHandler( guys )
+}
+
+
+
+void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string content /*( ͡° ͜ʖ ͡°)*/, void functionref( array<entity> guys ) squadHandler = null )
+{
+	string squadName = MakeSquadName( team, UniqueString( "" ) )
+	array<entity> guys
+	
+	entity pod = CreateDropPod( pos, <0,0,0> )
+	
+	InitFireteamDropPod( pod )
+	
+	for ( int i = 0; i < 4 ;i++ )
+	{
+		entity npc = CreateNPC( content, team, pos,<0,0,0> )
+		DispatchSpawn( npc )
+		SetSquad( npc, squadName )
+		
+		switch ( content )
+		{
+			case "npc_soldier":
+				ReplaceWeapon( npc, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
+				break
+				
+			case "npc_spectre":
+				ReplaceWeapon( npc, file.spectreWeapons[ RandomInt( file.spectreWeapons.len() ) ], [] )
+				break
+		}
+		
+		npc.SetParent( pod, "ATTACH", true )
+		
+		npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		guys.append( npc )
+	}
+	
+	// The order here is different so we can show on minimap while were still falling
+	if ( squadHandler != null )
+		thread squadHandler( guys )
+		
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+	
+	ActivateFireteamDropPod( pod, guys )
+}
+
+void function AiGameModes_SpawnReaper( vector pos, vector rot, int team, string aiSettings = "", void functionref( entity reaper ) reaperHandler = null )
+{
+	// nessie fix
+	thread Reaper_Spawnpoint( pos, team, 11.2 )
+
+	entity reaper = CreateSuperSpectre( team, pos, rot )
+	// reaper highlight
+	Highlight_SetEnemyHighlight( reaper, "enemy_titan" )
+	wait 10
+	SetSpawnOption_Titanfall( reaper )
+	SetSpawnOption_Warpfall( reaper )
+	
+	if ( aiSettings != "" )
+		SetSpawnOption_AISettings( reaper, aiSettings )
+	
+	DispatchSpawn( reaper )
+	
+	
+	if ( reaperHandler != null )
+		thread reaperHandler( reaper )
+}
+
+// copied from cl_replacement_titan_hud.gnut
+void function Reaper_Spawnpoint( vector origin, int team, float impactTime, bool hasFriendlyWarning = false )
+{
+	array<entity> targetEffects = []
+	vector surfaceNormal = < 0, 0, 1 >
+
+	int index = GetParticleSystemIndex( $"P_ar_titan_droppoint" )
+
+	if( hasFriendlyWarning )
+	{
+		entity effectFriendly = StartParticleEffectInWorld_ReturnEntity( index, origin, surfaceNormal )
+		SetTeam( effectFriendly, team )
+		EffectSetControlPointVector( effectFriendly, 1, < 128,188,255 > )
+		effectFriendly.kv.VisibilityFlags = ENTITY_VISIBLE_TO_FRIENDLY
+		targetEffects.append( effectFriendly )
+	}
+
+	entity effectEnemy = StartParticleEffectInWorld_ReturnEntity( index, origin, surfaceNormal )
+	SetTeam( effectEnemy, team )
+	EffectSetControlPointVector( effectEnemy, 1, < 255,99,0 > )
+	effectEnemy.kv.VisibilityFlags = ENTITY_VISIBLE_TO_ENEMY
+	targetEffects.append( effectEnemy )
+
+	wait impactTime
+
+	foreach( entity targetEffect in targetEffects )
+	{
+		if ( IsValid( targetEffect ) )
+			EffectStop( targetEffect )
+	}
+}
+
+// including aisettings stuff specifically for at bounty titans
+void function AiGameModes_SpawnTitan( vector pos, vector rot, int team, string setFile, string aiSettings = "", void functionref( entity titan ) titanHandler = null )
+{
+	entity titan = CreateNPCTitan( setFile, TEAM_BOTH, pos, rot )
+	SetSpawnOption_Titanfall( titan )
+	SetSpawnOption_Warpfall( titan )
+
+	if ( aiSettings != "" )
+		SetSpawnOption_AISettings( titan, aiSettings )
+
+	DispatchSpawn( titan )
+
+	if ( titanHandler != null )
+		thread titanHandler( titan )
+}
+
+entity function AiGameModes_SpawnTitanRandom( vector pos, vector rot, int team, void functionref( entity titan ) titanHandler = null )
+{
+	int randomindex = RandomInt( 7 )
+	string setfile = ""
+	string aiset = ""
+	switch( randomindex )
+	{
+		case 0:
+			setfile = "titan_atlas_stickybomb"
+			aiset = "npc_titan_auto_atlas_stickybomb"
+			break
+		case 1:
+			setfile = "titan_atlas_tracker"
+			aiset = "npc_titan_auto_atlas_tracker"
+			break
+		case 2:
+			setfile = "titan_stryder_leadwall"
+			aiset = "npc_titan_auto_stryder_leadwall"
+			break
+		case 3:
+			setfile = "titan_stryder_sniper"
+			aiset = "npc_titan_auto_stryder_sniper"
+			break
+		case 4:
+			setfile = "titan_ogre_meteor"
+			aiset = "npc_titan_auto_ogre_meteor"
+			break
+		case 5:
+			setfile = "titan_ogre_minigun"
+			aiset = "npc_titan_auto_ogre_minigun"
+			break
+		case 6:
+			setfile = "titan_atlas_vanguard"
+			aiset = "npc_titan_auto_atlas_vanguard"
+			break
+	}
+	foreach ( entity player in GetPlayerArrayOfTeam( team ) )
+	{
+	    Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", pos.x, pos.y, pos.z, Time() + 5 )
+	}
+	thread Reaper_Spawnpoint( pos, team, 5.0 )
+	//string squadName = MakeSquadName( team, UniqueString( "ZiplineTable" ) )
+	entity titan = CreateNPC( "npc_titan", team, pos, rot )
+	SetSpawnOption_AISettings( titan, aiset )
+	//SetSpawnOption_Titanfall( titan )
+	//SetSpawnOption_Warpfall( titan )
+	//SetSpawnOption_NPCTitan( titan, TITAN_HENCH )
+    titan.ai.titanSpawnLoadout.setFile = setfile
+    OverwriteLoadoutWithDefaultsForSetFile( titan.ai.titanSpawnLoadout )
+	DispatchSpawn( titan )
+	thread NPCTitanHotdrops( titan, true )
+	
+	//titan.SetSkin(1)
+	//SetSquad( titan, squadName )
+
+	if ( titanHandler != null )
+		thread titanHandler( titan )
+
+	return titan
+}
+
+void function AiGameModes_SpawnTitanBT( vector pos, vector rot, int team, void functionref( entity titan ) titanHandler = null )
+{
+	foreach ( entity player in GetPlayerArray() )
+	{
+	    Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", pos.x, pos.y, pos.z, Time() + 5 )
+	}
+	string squadName = MakeSquadName( team, UniqueString( "ZiplineTable" ) )
+	entity titan = CreateNPC( "npc_titan", team, pos, rot )
+	SetSpawnOption_AISettings( titan, "npc_titan_buddy")
+	SetSpawnOption_Titanfall( titan )
+	SetSpawnOption_Warpfall( titan )
+	SetSpawnOption_NPCTitan( titan, TITAN_HENCH )
+    titan.ai.titanSpawnLoadout.setFile = "titan_buddy"
+    OverwriteLoadoutWithDefaultsForSetFile( titan.ai.titanSpawnLoadout )
+	DispatchSpawn( titan )
+	titan.SetSkin(1)
+	SetSquad( titan, squadName )
+
+	if ( titanHandler != null )
+		thread titanHandler( titan )
+}
+
+void function AiGameModes_SpawnNPC( vector pos, vector rot, int team, string content )
+{
+	entity pod = CreateDropPod( pos, <0,0,0> )
+    entity spawnNpc
+
+    spawnNpc = CreateNPC( content, team, pos, rot )
+    SetSpawnOption_AISettings( spawnNpc, content )
+
+    InitFireteamDropPod( pod )
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+    DispatchSpawn( spawnNpc )
+
+    thread DropPodActiveThink( pod )
+}
+
+void function AiGameModes_SpawnGunShip( vector pos, vector rot, int team )
+{
+	entity gunship = CreateNPC("npc_gunship", team, pos, rot )
+	DispatchSpawn( gunship )
+	thread PlayAnim( gunship , "st_AngelCity_IMC_Win_ComeIn")
+    WaittillAnimDone( gunship )
+	vector spawnpoint = gunship.GetOrigin()
+	vector spawnang = gunship.GetAngles()
+	gunship.Destroy()
+	entity gunship2 = CreateNPC("npc_gunship", team, spawnpoint, spawnang )
+	Highlight_SetEnemyHighlight( gunship2, "enemy_titan" )
+	DispatchSpawn( gunship2 )
+	if( RandomInt( 2 ) == 1 )
+	{
+		gunship2.TakeWeaponNow( "mp_weapon_gunship_missile" )
+		gunship2.GiveWeapon( "mp_weapon_gunship_turret", ["npc_elite_weapon"] )
+		gunship2.SetActiveWeaponByName( "mp_weapon_gunship_turret" )
+	}
+	else
+	{
+		gunship2.TakeWeaponNow( "mp_weapon_gunship_missile" )
+		gunship2.GiveWeapon( "mp_weapon_gunship_missile", ["npc_elite_weapon"] )
+		gunship2.SetActiveWeaponByName( "mp_weapon_gunship_missile" )
+	}
+
+}
+
+void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot, int team )
+{
+	entity pod = CreateDropPod( pos, <0,0,0> )
+
+	entity pilot = CreateNPC( "npc_soldier", team, pos, rot )
+	pilot.s.petTitan <- null // initializing
+	pilot.s.nextTitanRespawnAvailable <- null
+
+	InitFireteamDropPod( pod )
+	thread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+	wait 3
+	entity titan = AiGameModes_SpawnTitanForPilot( pilot, pos, rot ) // send titan a little bit later
+	wait 2
+	DispatchSpawn( pilot )
+
+	if( team == TEAM_MILITIA )
+		pilot.SetModel( $"models/humans/pilots/sp_medium_reaper_m.mdl" )
+	if( team == TEAM_IMC )
+		pilot.SetModel( $"models/humans/pilots/sp_medium_stalker_m.mdl" )
+	pilot.SetTitle( "Pilot" )
+	pilot.SetMaxHealth( 1000 )
+	pilot.SetHealth( 1000 )
+	Highlight_SetEnemyHighlight( pilot, "enemy_player" )
+
+	ReplaceWeapon( pilot, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], ["npc_elite_weapon"] )
+	pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+
+	thread DropPodActiveThink( pod, 1 )
+
+	NpcPilotSetPetTitan( pilot, titan )
+	titan.SetTitle( pilot.GetTitle() + "'s Titan" )
+	titan.WaitSignal( "TitanHotDropComplete" )
+	thread NpcPilotRunsToEmbarkTitan( pilot, titan )
+	wait 2.0
+	if( !IsAlive( titan ) )
+		return
+	if( !IsAlive( pilot ) )
+	{
+		thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
+		return
+	}
+	thread ForceStartTitan( titan, pilot )
+	waitthread NpcPilotRunsToEmbarkTitan( pilot, titan )
+	if( !IsAlive( titan ) )
+		return
+	if( !IsAlive( pilot ) )
+	{
+		thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
+		return
+	}
+	thread NpcPilotEmbarksTitan( pilot, titan )
+	
+		
+	/*
+	while( true ) // keep making npc pilot run to embark till we success
+	{
+		wait 2.0
+		if( !IsAlive( titan ) )
+			return
+		if( titan.GetTitanSoul().soul.seatedNpcPilot.isValid )
+			return
+		if( !IsAlive( pilot ) )
+		{
+			thread PlayAnimGravity( titan, "at_hotdrop_quickstand" ) // stand up and fight itself
+			return
+		}
+		if( fabs( Distance2D( pilot.GetOrigin(), titan.GetOrigin() ) ) >= 300 || fabs( pilot.GetOrigin().z - titan.GetOrigin().z ) >= 50 ) // too far for embarking
+			thread NpcPilotRunsToEmbarkTitan( pilot, titan )
+		else
+		{
+			waitthread NpcPilotRunsToEmbarkTitan( pilot, titan )
+			if( !IsAlive( titan ) )
+				return
+			if( titan.GetTitanSoul().soul.seatedNpcPilot.isValid )
+				return
+			if( !IsAlive( pilot ) )
+			{
+				thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
+				return
+			}
+			if( !titan.GetTitanSoul().soul.seatedNpcPilot.isValid )
+				thread NpcPilotEmbarksTitan( pilot, titan )
+			else
+				return
+		}
+	}
+	*/
+}
+
+void function ForceStartTitan( entity titan, entity pilot )
+{
+	wait 10
+	if( IsAlive( pilot ) )
+	{
+		if( IsAlive( titan ) )
+		{
+			titan.SetOwner( pilot )
+			NPCFollowsNPC( titan, pilot )
+			pilot.Signal( "ForceStartMove" )
+			thread PilotHandler( pilot )
+			thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
+		}
+	}
+	else
+	{
+		if( IsAlive( titan ) )
+		{
+			if( titan.GetTitanSoul().soul.seatedNpcPilot.isValid )
+				return
+			thread PlayAnimGravity( titan, "at_hotdrop_quickstand" )
+			thread TitanHandler( titan )
+		}
+	}
+}
+
+entity function AiGameModes_SpawnTitanForPilot( entity pilot, vector pos, vector rot )
+{
+	int randomindex = RandomInt( 7 )
+	string setfile = ""
+	string aiset = ""
+	switch( randomindex )
+	{
+		case 0:
+			setfile = "titan_atlas_stickybomb"
+			aiset = "npc_titan_auto_atlas_stickybomb"
+			break
+		case 1:
+			setfile = "titan_atlas_tracker"
+			aiset = "npc_titan_auto_atlas_tracker"
+			break
+		case 2:
+			setfile = "titan_stryder_leadwall"
+			aiset = "npc_titan_auto_stryder_leadwall"
+			break
+		case 3:
+			setfile = "titan_stryder_sniper"
+			aiset = "npc_titan_auto_stryder_sniper"
+			break
+		case 4:
+			setfile = "titan_ogre_meteor"
+			aiset = "npc_titan_auto_ogre_meteor"
+			break
+		case 5:
+			setfile = "titan_ogre_minigun"
+			aiset = "npc_titan_auto_ogre_minigun"
+			break
+		case 6:
+			setfile = "titan_atlas_vanguard"
+			aiset = "npc_titan_auto_atlas_vanguard"
+			break
+	}
+	foreach ( entity player in GetPlayerArrayOfTeam( pilot.GetTeam() ) )
+	{
+	    Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", pos.x, pos.y, pos.z, Time() + 5 )
+	}
+	thread Reaper_Spawnpoint( pos, pilot.GetTeam(), 5.0 )
+	entity titan = CreateNPC( "npc_titan", pilot.GetTeam(), pos, rot )
+	SetSpawnOption_AISettings( titan, aiset )
+    titan.ai.titanSpawnLoadout.setFile = setfile
+    OverwriteLoadoutWithDefaultsForSetFile( titan.ai.titanSpawnLoadout )
+	DispatchSpawn( titan )
+
+	NpcPilotSetPetTitan( pilot, titan )
+	thread NPCTitanHotdrops( titan, false )
+
+	return titan
+}
+
+/*
+void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot,entity titan, int team, void functionref( entity titan ) titanHandler = null )
+{
+	entity pod = CreateDropPod( pos, <0,0,0> )
+	entity pilot = CreateNPC("npc_soldier", team, pos, rot )
+	//array<entity> titans = GetNPCArrayEx( "npc_titan", team, -1, <0,0,0>, -1 )
+	//entity titan = titans[RandomInt( titans.len() )]
+
+	InitFireteamDropPod( pod )
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+
+	DispatchSpawn( pilot )
+	if( team == TEAM_MILITIA )
+		pilot.SetModel( $"models/humans/pilots/sp_medium_reaper_m.mdl" )
+	if( team == TEAM_IMC )
+		pilot.SetModel( $"models/humans/pilots/sp_medium_stalker_m.mdl" )
+	pilot.SetTitle( "鉄馭" )
+	pilot.SetMaxHealth( 500 )
+	pilot.SetHealth( 500 )
+
+	ReplaceWeapon( pilot, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
+	//pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+	
+	thread DropPodActiveThink( pod )
+
+	//pilot.WaitSignal( "npc_deployed" )
+
+	if ( titanHandler != null )
+		thread titanHandler( pilot )
+
+	//thread CaptainThink( pilot )
+
+	NpcPilotSetPetTitan( pilot, titan )
+	wait 5
+	//TeleportPilotToTitan( pilot, titan )
+	thread NpcPilotRunsToEmbarkTitan( pilot, titan )
+	
+	while(true)
+	{
+		wait 5
+
+		if( IsValid( pilot ) && IsValid( titan ) )
+		{
+			thread NpcPilotRunsToEmbarkTitan( pilot, titan )
+		}
+
+		if( !IsValid( pilot ) || !IsValid( titan ) )
+			break
+	}
+}
+*/
+
+void function TeleportPilotToTitan( entity pilot , entity titan )
+{
+	vector origin = titan.GetOrigin();
+	vector angles = titan.GetAngles();
+
+	pilot.SetOrigin(origin)
+	pilot.SetAngles(angles)
+}
+
+void function AiGameModes_SpawnPilotWithTitan( vector pos, vector rot, int team, void functionref( entity titan ) titanHandler = null )
+{
+	entity pod = CreateDropPod( pos, <0,0,0> )
+	entity pilot = CreateNPC("npc_soldier", team, pos, rot )
+	array<entity> pilots = [ pilot ]
+
+	InitFireteamDropPod( pod )
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+
+	DispatchSpawn( pilot )
+	if( team == TEAM_MILITIA )
+		pilot.SetModel( $"models/humans/pilots/sp_medium_reaper_m.mdl" )
+	if( team == TEAM_IMC )
+		pilot.SetModel( $"models/humans/pilots/sp_medium_stalker_m.mdl" )
+	pilot.SetTitle( "Pilot" )
+	pilot.SetMaxHealth( 1000 )
+	pilot.SetHealth( 1000 )
+	Highlight_SetEnemyHighlight( pilot, "enemy_player" )
+
+	foreach ( pilot in pilots )
+	{
+		ReplaceWeapon( pilot, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], ["npc_elite_weapon"] )
+		pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+	}
+	
+	ActivateFireteamDropPod( pod, pilots )
+
+	pilots[ pilots.len() - 1 ].WaitSignal( "npc_deployed" )
+
+	if ( titanHandler != null )
+		thread titanHandler( pilot )
+
+	waitthread CaptainThink( pilot )
+	WaitFrame()
+	//thread NpcPilotCallsInAndEmbarksTitan(pilot, pilot.GetOrigin() + Vector(RandomFloatRange(-100,100),RandomFloatRange(-100,100),0), <0,0,0> )
+	entity titan = NpcPilotCallsInTitan(pilot, pilot.GetOrigin(), <0,0,0> )
+
+	wait 5
+	if( IsValid( pilot ) && IsValid( titan ) )
+	{
+		thread NpcPilotRunsToEmbarkTitan( pilot, titan )
+		if ( titanHandler != null )
+			thread titanHandler( titan )
+	}
+
+}
+
+function OnNpcPilotBecomesTitan( pilot, titan )
+{
+	expect entity( titan )
+	thread DelayedTitanHandler( titan )
+}
+
+void function DelayedTitanHandler( entity titan )
+{
+	wait 1
+	if( IsAlive( titan ) )
+	{
+		thread TitanHandler( titan )
+	}
+}
+
+function OnNpcTitanBecomesPilot( pilot, titan )
+{
+	expect entity( pilot )
+	pilot.SetInvulnerable()
+	thread DelayedPilotHandler( pilot )
+	/*
+	if( pilot.GetTeam()  == TEAM_MILITIA )
+	{
+		pilot.SetModel( $"models/humans/pilots/sp_medium_reaper_m.mdl" )
+		
+		pilot.SetTitle( "鉄馭" )
+		pilot.SetMaxHealth( 1000 )
+		pilot.SetHealth( 1000 )
+		thread CaptainThink( pilot )
+	}
+	if( pilot.GetTeam()  == TEAM_IMC )
+	{
+		pilot.SetModel( $"models/humans/pilots/sp_medium_stalker_m.mdl" )
+
+		pilot.SetTitle( "鉄馭" )
+		pilot.SetMaxHealth( 1000 )
+		pilot.SetHealth( 1000 )
+		thread CaptainThink( pilot )
+	}
+	*/
+}
+
+void function DelayedPilotHandler( entity pilot )
+{
+	wait 1
+	if( IsAlive( pilot ) )
+	{
+		pilot.ClearInvulnerable()
+		thread PilotHandler( pilot )
+	}
+}
+
+void function PilotHandler( entity pilot )
+{
+	array< entity > points = GetNPCArrayOfEnemies( pilot.GetTeam() )
+	
+	if ( points.len()  == 0 )
+		return
+	
+	vector point
+	point = points[ RandomInt( points.len() ) ].GetOrigin()
+	
+	array<entity> players = GetPlayerArrayOfEnemies( pilot.GetTeam() )
+	
+	// Setup AI
+	pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+	pilot.AssaultPoint( point )
+	pilot.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
+	
+	// show on enemy radar
+	foreach ( player in players )
+		pilot.Minimap_AlwaysShow( 0, player )
+	
+	
+	//thread AITdm_CleanupBoredNPCThread( guy )
+	
+	// Every 5 - 15 secs change AssaultPoint
+	while ( true )
+	{	
+		// Check if alive
+		if ( !IsAlive( pilot ) )
+			return
+		
+		// Get point and send guy to it
+		points = GetNPCArrayOfEnemies( pilot.GetTeam() )
+		if ( points.len() == 0 )
+			continue
+			
+		point = points[ RandomInt( points.len() ) ].GetOrigin()
+		
+		pilot.AssaultPoint( point )
+		wait RandomFloatRange(5.0,15.0)
+	}
+
+}
+
+void function TitanHandler( entity titan )
+{
+	array< entity > points = GetNPCArrayOfEnemies( titan.GetTeam() )
+	
+	if ( points.len()  == 0 )
+		return
+	
+	vector point
+	point = points[ RandomInt( points.len() ) ].GetOrigin()
+	
+	array<entity> players = GetPlayerArrayOfEnemies( titan.GetTeam() )
+	
+	// Setup AI
+	titan.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+	titan.AssaultPoint( point )
+	titan.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
+	
+	// show on enemy radar
+	foreach ( player in players )
+		titan.Minimap_AlwaysShow( 0, player )
+	
+	
+	//thread AITdm_CleanupBoredNPCThread( guy )
+	
+	// Every 5 - 15 secs change AssaultPoint
+	while ( true )
+	{	
+		// Check if alive
+		if ( !IsAlive( titan ) )
+			return
+		
+		// Get point and send guy to it
+		points = GetNPCArrayOfEnemies( titan.GetTeam() )
+		if ( points.len() == 0 )
+			continue
+			
+		point = points[ RandomInt( points.len() ) ].GetOrigin()
+		
+		titan.AssaultPoint( point )
+		wait RandomFloatRange(5.0,15.0)
+	}
+}
+
+void function AiGameModes_SpawnDropPodToGetWeapons( vector pos, vector rot )
+{
+	//thread DropWeaponAlert( pos, 500, 200 )
+	thread CarePackage_SpawnPoint( pos, 10 )
+	thread AiGameModes_SpawnDropPodToGetWeapons_Threaded( pos, rot )
+}
+
+void function AiGameModes_SpawnDropPodToGetWeapons_Threaded( vector pos, vector rot, float lifeTime = 30 )
+{
+	usedplayer.clear()
+	wait 5
+	entity pod = CreateDropPod( pos, <0,0,0> )
+	Highlight_SetOwnedHighlight( pod, "friendly_ai" )
+
+	//InitFireteamDropPod( pod )
+
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+	pod.SetUsable()
+    pod.SetUsableByGroup( "pilot" )
+    pod.SetUsePrompts( "Press %use% to Get Weapon", "Hold %use% to Get Weapon" )
+    AddCallback_OnUseEntity( pod , GiveAirDropWeapon )
+    if( IsValid(pod) )
+    {
+    	HighlightDropPod( pod )
+    	pod.SetModel( CAREPACKAGE_MODEL )
+    }
+    
+    wait lifeTime
+    if( IsValid(pod) )
+    {
+    	pod.Destroy()
+   		pod.Dissolve( ENTITY_DISSOLVE_CORE, Vector( 0, 0, 0 ), 500 )
+    }
+}
+
+// copied from cl_replacement_titan_hud.gnut
+void function CarePackage_SpawnPoint( vector origin, float impactTime )
+{
+	array<entity> targetEffects = []
+	vector surfaceNormal = < 0, 0, 1 >
+
+	int index = GetParticleSystemIndex( $"P_ar_titan_droppoint" )
+
+	entity targetEffect = StartParticleEffectInWorld_ReturnEntity( index, origin, surfaceNormal )
+	EffectSetControlPointVector( targetEffect, 1, < 0,255,0 > )
+
+	wait impactTime
+
+	if ( IsValid( targetEffect ) )
+		EffectStop( targetEffect )
+}
+
+function GiveAirDropWeapon( pod , player )
+{
+	expect entity( player )
+	vector pos = player.GetOrigin()
+	string uid = player.GetUID()
+
+	if( usedplayer.contains( uid ) )
+	{
+		SendHudMessage(player, "Once Robbed Weapon from Care Package\nPlease Wait for Next Delivery",  -1, 0.3, 255, 255, 0, 255, 0.15, 3, 1)
+		return
+	}
+    //DropModdedWeapons( WEAPONS, pos, MODS )
+	if( player.GetMainWeapons().len() == 3 )
+		player.DropWeapon( player.GetActiveWeapon() )
+	GiveModdedWeapons( player, WEAPONS, MODS )
+    SendHudMessage(player, "Got Weapon from Care Package",  -1, 0.3, 255, 255, 0, 255, 0.15, 3, 1)
+    usedplayer.append( uid )
+
+}
+
+void function AiGameModes_SpawnDropPodWithWeapons( vector pos, vector rot, array<string> weapons, array<string> mods, int amount = 4, float destructionTime = 60 )
+{
+	thread DropWeaponAlert( pos, 500, 200 )
+	thread AiGameModes_SpawnDropPodWithWeapons_Threaded( pos, rot, weapons, mods, amount )
+}
+
+void function AiGameModes_SpawnDropPodWithWeapons_Threaded( vector pos, vector rot, array<string> weapons, array<string> mods, int amount = 4 )
+{
+	/*
+	foreach ( entity player in GetPlayerArray() )
+	{
+	    Remote_CallFunction_Replay( player, "ServerCallback_ReplacementTitanSpawnpoint", pos.x, pos.y, pos.z, Time() + 4 )
+	}
+	*/
+	wait 10
+	entity pod = CreateDropPod( pos, <0,0,0> )
+
+	InitFireteamDropPod( pod )
+
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+
+	thread DropPodActiveThink( pod, 60 )
+
+	wait 1.5
+	for( int i = 0; i < amount; i++ )
+    {
+        //string weaponName = weapons[ RandomInt(weapons.len()) ]
+
+        DropModdedWeapons( weapons, pos, mods )
+    }
+}
+
+void function AiGameModes_SpawnReaperDorpsWeapons( vector pos, vector rot, array<string> weapons, array<string> mods )
+{
+	thread DropWeaponAlert( pos, 500, 200 )
+    thread AiGameModes_SpawnReaperDorpsWeapons_Threaded( pos, rot, weapons, mods )
+}
+
+void function AiGameModes_SpawnReaperDorpsWeapons_Threaded( vector pos, vector rot, array<string> weapons, array<string> mods )
+{
+    wait(10)
+    entity reaper = CreateSuperSpectre( TEAM_UNASSIGNED, pos, rot )
+    SetSpawnOption_AISettings( reaper, "npc_super_spectre_aitdm" )
+    DispatchSpawn( reaper )
+    thread SuperSpectre_WarpFall( reaper )
+
+    wait(1)
+    reaper.Destroy()
+    for( int i = 0; i <= 4; i++ )
+    {
+        //string weaponName = weapons[ RandomInt(weapons.len()) ]
+        DropModdedWeapons( weapons, pos, mods )
+    }
+}
+
+void function DropWeaponAlert( vector pos, int radius = 300, int times = 999 )
+{
+	for( int i = 0; i <= times; i++ )
+    {
+		foreach ( entity player in GetPlayerArray() )
+	    {
+    		if( IsValid(player) && GetGameState() == eGameState.Playing )
+    		{
+	        	Remote_CallFunction_Replay( player, "ServerCallback_SonarPulseFromPosition", pos.x, pos.y, pos.z, radius, 1.0, true )
+	        }
+    	}
+    	WaitFrame()
+    }
+    /*
+    foreach ( entity player in GetPlayerArray() )
+    {
+		if( IsValid(player) )
+		{
+        	Remote_CallFunction_Replay( player, "ServerCallback_IncomingAirDrop", pos.x, pos.y, pos.z, Time() + 10 )
+        }
+	}
+	*/
+}
+
+void function DropModdedWeapons( array<string> weapons, vector droppoint, array<string> mods )
+{
+	string weaponName = weapons[ RandomInt(weapons.len()) ]
+    entity weapon = CreateWeaponEntityByNameWithPhysics( weaponName, droppoint + Vector(0,0,20), <0,0,0> )
+    if( weaponName in ANTITITANS )
+    	mods = ANTITAN_MODS
+    if( weaponName in DEFENDER )
+    	mods = DEFENDER_MODS
+    if( weaponName in PISTOLS )
+    	mods = PISTOL_MODS
+    if( weaponName in SNIPERS )
+        mods = SNIPER_MODS
+    if( weaponName in LAUNCHERS )
+    	mods = LAUNCHER_MODS
+    weapon.SetMods( mods )
+    HighlightWeaponAmped( weapon )
+}
+
+void function GiveModdedWeapons( entity player, array<string> weapons, array<string> mods )
+{
+	string weaponName = weapons[ RandomInt(weapons.len()) ]
+    if( weaponName in ANTITITANS )
+    	mods = ANTITAN_MODS
+    if( weaponName in DEFENDER )
+    	mods = DEFENDER_MODS
+    if( weaponName in PISTOLS )
+    	mods = PISTOL_MODS
+    if( weaponName in SNIPERS )
+        mods = SNIPER_MODS
+    if( weaponName in LAUNCHERS )
+    	mods = LAUNCHER_MODS
+    player.GiveWeapon( weaponName, mods )
+	player.SetActiveWeaponByName( weaponName )
+}
+
+void function HighlightWeaponAmped( entity weapon )
+{
+#if HAS_WEAPON_PICKUP_HIGHLIGHT
+	if ( weapon.IsLoadoutPickup() )
+	{
+		Highlight_SetOwnedHighlight( weapon, "sp_loadout_pickup" )
+		Highlight_SetNeutralHighlight( weapon, "sp_loadout_pickup" )
+	}
+	else
+	{
+		Highlight_SetOwnedHighlight( weapon, "enemy_boss_bounty" )
+		Highlight_SetNeutralHighlight( weapon, "enemy_boss_bounty" )
+	}
+#endif // #if HAS_WEAPON_PICKUP_HIGHLIGHT
+}
+
+void function HighlightDropPod( entity pod )
+{
+	Highlight_SetOwnedHighlight( pod, "enemy_boss_bounty" )
+	Highlight_SetNeutralHighlight( pod, "enemy_boss_bounty" )
+}
+
+//------------------------------------------------------
+
+void function ReplaceWeapon( entity guy, string weapon, array<string> mods )
+{
+	guy.TakeActiveWeapon()
+	guy.GiveWeapon( weapon, mods )
+	guy.SetActiveWeaponByName( weapon )
+}
+
+//------------------------------------------------------
+
+array<entity> function GetValidIntroDropShipSpawn( array<entity> introNodes )
+{
+	array<entity> introShipSpawns
+
+	foreach ( node in introNodes )
+	{
+		entity closestNode = GetClosest( GetZiplineDropshipSpawns(), node.GetOrigin() )
+		SetTeam( closestNode, node.GetTeam() )
+
+		if ( Distance( closestNode.GetOrigin(), node.GetOrigin() ) < INTRO_DROPSHIP_CUTOFF )
+			introShipSpawns.append( closestNode )
+	}
+
+	return introShipSpawns
+}

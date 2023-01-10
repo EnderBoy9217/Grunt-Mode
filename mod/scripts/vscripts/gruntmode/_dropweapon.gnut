@@ -1,0 +1,74 @@
+global function DropPlayerWeapon_Init
+
+global function DropReaperWithWeapons
+
+const array<string> WEAPONS = [ "mp_weapon_alternator_smg", "mp_weapon_arc_launcher", "mp_weapon_autopistol", "mp_weapon_car", "mp_weapon_defender", "mp_weapon_dmr", "mp_weapon_doubletake", "mp_weapon_epg", "mp_weapon_esaw", "mp_weapon_g2", "mp_weapon_hemlok", "mp_weapon_hemlok_smg", "mp_weapon_lmg", "mp_weapon_lstar", "mp_weapon_mastiff", "mp_weapon_mgl", "mp_weapon_pulse_lmg", "mp_weapon_r97", "mp_weapon_rocket_launcher", "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_satchel", "mp_weapon_semipistol", "mp_weapon_shotgun", "mp_weapon_shotgun_pistol", "mp_weapon_smart_pistol", "mp_weapon_smr", "mp_weapon_sniper", "mp_weapon_softball", "mp_weapon_vinson", "mp_weapon_wingman", "mp_weapon_wingman_n" ]
+const array<string> MODS = [ "pas_fast_reload", "extended_ammo", "pas_fast_swap", "pas_fast_ads" ]
+
+void function DropPlayerWeapon_Init()
+{
+    #if SERVER
+    AddClientCommandCallback( "dropgun", ClientCommandCallbackDropActiveWeapon )
+    #endif
+}
+
+#if SERVER
+void function ClientCommandCallbackDropActiveWeapon( entity player )
+{
+    if( IsValid(player.GetActiveWeapon()) )
+    {
+        weaponName = player.GetActiveWeapon()
+        vector droppoint = player.GetPlayerOrigin()
+        CreateWeaponEntityByNameWithPhysics( weaponName, droppoint, <0,0,0> )
+   }
+}
+
+void function DropReaperWithWeapons( vector pos, vector rot, string weaponName, array<string> mods )
+{
+    thread DropReaperWithWeapons_Threaded( pos, rot, weaponName, mods )
+}
+
+void function DropReaperWithWeapons_Threaded( vector pos, vector rot, string weaponName, array<string> mods )
+{
+    foreach ( entity player in GetPlayerArray() )
+    {
+        Remote_CallFunction_Replay( player, "ServerCallback_SonarPulseFromPosition", pos.x, pos.y, pos.z, Time() + 5, SONAR_GRENADE_RADIUS )
+    }
+    wait(4)
+    entity reaper = CreateSuperSpectre( team, pos, rot )
+    SetSpawnOption_AISettings( reaper, "npc_super_spectre_aitdm" )
+    DispatchSpawn( reaper )
+    thread SuperSpectre_WarpFall( reaper )
+
+    wait(1)
+    reaper.Destory()
+    for( i = 0; i < 4; i++ )
+    {
+        DropModdedWeapons( weaponName, pos, mods )
+    }
+}
+
+void function DropModdedWeapons( string weaponName, vector droppoint, array<string> mods )
+{
+    string weaponName = weaponName[ RandomInt(weaponName.len()) ]
+    entity weapon = CreateWeaponEntityByNameWithPhysics( weaponName, droppoint, <0,0,0> )
+    weapon.SetMods([ mods ])
+    HighlightWeapon( weapon )
+}
+#endif
+
+void function HighlightWeapon( entity weapon )
+{
+#if HAS_WEAPON_PICKUP_HIGHLIGHT
+    if ( weapon.IsLoadoutPickup() )
+    {
+        Highlight_SetOwnedHighlight( weapon, "sp_loadout_pickup" )
+        Highlight_SetNeutralHighlight( weapon, "sp_loadout_pickup" )
+    }
+    else
+    {
+        Highlight_SetOwnedHighlight( weapon, "weapon_drop_active" )
+        Highlight_SetNeutralHighlight( weapon, "weapon_drop_normal" )
+    }
+#endif // #if HAS_WEAPON_PICKUP_HIGHLIGHT
+}

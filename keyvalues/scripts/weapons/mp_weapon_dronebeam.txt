@@ -1,0 +1,38 @@
+WeaponData
+{
+	Mods
+	{
+		npc_elite_weapon
+		{
+			// Damage - When Used by NPCs
+			"npc_damage_near_value"   						"100"
+			"npc_damage_far_value"							"100"
+			"npc_damage_near_value_titanarmor"				"1150"
+			"npc_damage_far_value_titanarmor" 				"1150"
+			"npc_damage_near_distance"						"200"
+			"npc_damage_far_distance" 						"15000"
+
+			// NPC
+			"npc_min_engage_range"							"400"
+			"npc_max_engage_range"							"1500"
+			"npc_min_engage_range_heavy_armor"				"400"
+			"npc_max_engage_range_heavy_armor"				"400"
+			"npc_min_range"   								"0"
+			"npc_max_range"   								"5000"
+
+			"npc_min_burst"   								"1"
+			"npc_max_burst"   								"1"
+			"npc_rest_time_between_bursts_min"				"2.5"
+			"npc_rest_time_between_bursts_max"				"2.5"
+
+			"npc_charge_time_min"							"1.0"
+			"npc_charge_time_max"							"1.3"
+
+			//"npc_pre_fire_delay"							"1.3"
+			//"npc_pre_fire_delay_interval"					"2.0"
+			"npc_rest_time_between_bursts_expedite"			"1.0"
+
+			"npc_reload_enabled"  							"0"
+		}
+	}
+}

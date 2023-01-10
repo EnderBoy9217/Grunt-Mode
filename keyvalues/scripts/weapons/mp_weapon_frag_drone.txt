@@ -1,0 +1,26 @@
+WeaponData
+{
+	Mods
+	{
+		pas_ordnance_pack
+		{
+		}
+		burn_card_weapon_mod
+		{
+		}
+		all_ticks
+		{
+		}
+		drone_spawner
+		{
+			"ammo_clip_size"   								"2"
+			"ammo_default_total"							"2"
+			"ammo_display"									"count"
+			"ammo_min_to_fire"								"1"
+			"ammo_per_shot"									"1"
+			"ammo_stockpile_max"							"2"
+			"regen_ammo_refill_rate"						"0"
+			"regen_ammo_refill_start_delay"					"0.0"
+		}
+	}
+}

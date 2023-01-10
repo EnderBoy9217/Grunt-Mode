@@ -1,0 +1,57 @@
+WeaponData
+{
+	Mods
+	{
+		fd_damage
+		{
+		}
+		npc_elite_weapon
+		{
+			"npc_miss_fast_player"							"0"
+
+			// Damage - When Used by NPCs
+			"npc_damage_near_value_titanarmor"				"150"
+			"npc_damage_far_value_titanarmor" 				"130"
+			"npc_damage_near_distance"						"1000"
+			"npc_damage_far_distance" 						"3000"
+			"npc_damage_near_value"   						"40"
+			"npc_damage_far_value"							"40"
+			"npc_explosion_damage"							"20"
+			"npc_explosion_damage_heavy_armor"				"100"
+
+			// NPC
+			"proficiency_poor_spreadscale"					"4.0"
+			"proficiency_average_spreadscale" 				"3.0"
+			"proficiency_good_spreadscale"					"2.0"
+			"proficiency_very_good_spreadscale"   			"1.5"
+
+			"npc_spread_defocused_cone_multiplier"			"1.0"
+
+			"npc_min_engage_range"							"0"
+			"npc_max_engage_range"							"2200"
+			"npc_min_engage_range_heavy_armor"				"1800"
+			"npc_max_engage_range_heavy_armor"				"3000"
+			"npc_min_range"   								"0"
+			"npc_max_range"   								"4000"
+
+			"npc_min_burst"   								"6"
+			"npc_max_burst"   								"9"
+
+			//"npc_burst_secondary"   						"6"
+			//"npc_rest_time_secondary"						"20"
+			//"npc_aim_at_feet"								"1"
+
+			"npc_pre_fire_delay"							"0.5"
+			"npc_pre_fire_delay_interval"					"1.5"
+			"npc_rest_time_between_bursts_min"				"4"
+			"npc_rest_time_between_bursts_max"				"6"
+			"npc_rest_time_between_bursts_expedite"			"1.5"
+
+			"npc_lead_time_scale"							"0.0011"
+			"npc_lead_time_min_dist"						"100"
+			"npc_lead_time_max_dist"						"4000"
+			"npc_fire_at_enemy_defense_time"				"1.0"
+
+		}
+	}
+}

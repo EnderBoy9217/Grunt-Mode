@@ -1,0 +1,31 @@
+{
+	"Name" : "Grunt Mode",
+	"Description" : "You're now a grunt",
+	"Version": "1.0.0",
+	"LoadPriority": 2,
+	"RequiredOnClient": false,
+
+	"Scripts": [
+		{
+			"Path": "/gruntmode/_droppod_spawn_1player.gnut",
+			"RunOn": " SERVER && MP",
+			"ClientCallback": {
+				"After": "DropPodSpawn1Player_Init"
+			},
+            "ServerCallback": {
+                "After": "DropPodSpawn1Player_Init"
+            }
+		},
+		{
+			"Path": "/gruntmode/_becomesgrunt.gnut",
+			"RunOn": " SERVER && MP",
+			"ClientCallback": {
+				"After": "BecomesGruntMode_Init"
+			},
+            "ServerCallback": {
+                "After": "BecomesGruntMode_Init"
+            }
+		}
+	]
+}
+

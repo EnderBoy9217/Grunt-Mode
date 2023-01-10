@@ -1,0 +1,62 @@
+WeaponData
+{
+	Mods
+	{
+		slammer
+		{
+		}
+   		jump_kit
+        {
+        }
+        pro_screen
+        {
+        }
+        extended_ammo
+		{
+		}
+		pas_fast_ads
+		{
+		}
+		pas_fast_swap
+		{
+		}
+		burn_mod_pulse_lmg
+		{
+		}
+		tactical_cdr_on_kill
+		{
+		}
+		pas_run_and_gun
+		{
+		}
+		pas_fast_reload
+		{
+		}
+		npc_elite_weapon
+		{
+			"npc_damage_near_value"   						"30"
+			"npc_damage_far_value"							"30"
+			"npc_damage_near_value_titanarmor"				"175"
+			"npc_damage_far_value_titanarmor"				"175"
+			"npc_explosion_damage"								"30"
+
+			"npc_max_range"   								"4000"
+			
+			// NPC
+			"proficiency_poor_spreadscale"					"7.0"
+			"proficiency_average_spreadscale" 				"5.0"
+			"proficiency_good_spreadscale"					"4.0"
+			"proficiency_very_good_spreadscale"   			"2.5"
+
+			"npc_min_engage_range"							"0"
+			"npc_max_engage_range"							"2500"
+			"npc_min_engage_range_heavy_armor"				"500"
+			"npc_max_engage_range_heavy_armor"				"3000"
+
+			"npc_min_burst"   								"4"
+			"npc_max_burst"   								"4"
+			"npc_rest_time_between_bursts_min"				"1.0"
+			"npc_rest_time_between_bursts_max"				"1.5"
+		}
+	}
+}

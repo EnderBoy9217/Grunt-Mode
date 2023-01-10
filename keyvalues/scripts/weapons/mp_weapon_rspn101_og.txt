@@ -1,0 +1,76 @@
+WeaponData
+{
+
+	Mods
+	{
+		iron_sights
+		{
+		}
+		hcog
+		{
+		}
+		redline_sight
+		{
+		}
+		threat_scope
+		{
+		}
+		extended_ammo
+		{
+		}
+		tactical_cdr_on_kill
+		{
+		}
+		pas_run_and_gun
+		{
+		}
+		smart_lock
+		{
+		}
+		pro_screen
+		{
+		}
+		pas_fast_reload
+		{
+		}
+		pas_fast_ads
+		{
+		}
+		pas_fast_swap
+		{
+		}
+		burn_mod_rspn101
+		{
+		}
+		npc_elite_weapon
+		{
+			// NPC
+			"proficiency_poor_spreadscale"					"5.0"
+			"proficiency_average_spreadscale" 				"2.0"
+			"proficiency_good_spreadscale"					"3.0"
+			"proficiency_very_good_spreadscale"   			"2.5"
+			"proficiency_perfect_spreadscale"   			"<KEEP_DEFAULT>"
+
+			"npc_damage_near_value"   						"25"
+			"npc_damage_far_value"							"17"
+			"npc_damage_near_value_titanarmor"				"70"
+			"npc_damage_far_value_titanarmor" 				"50"
+
+			"npc_min_engage_range"							"0"
+
+			"npc_max_range"   								"2500"
+			"npc_max_engage_range"							"2000"
+			"npc_min_engage_range_heavy_armor"				"500"
+			"npc_max_engage_range_heavy_armor"				"2000"
+
+			"proficiency_poor_additional_rest"				"0.2"
+			"proficiency_average_additional_rest"			"0.2"
+			"proficiency_good_additional_rest"				"0.2"
+
+			"npc_min_burst"   								"12"
+			"npc_max_burst"   								"24"
+			"npc_rest_time_between_bursts_min"				"0.5"
+			"npc_rest_time_between_bursts_max"				"0.8"
+		}
+	}
+}
