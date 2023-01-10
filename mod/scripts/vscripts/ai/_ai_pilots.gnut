@@ -630,7 +630,7 @@ void function NpcPilotBecomesTitan( entity pilot, entity titan )
 	titanSoul.soul.seatedNpcPilot.isValid				= true
 
 	titanSoul.soul.seatedNpcPilot.team 					= pilot.GetTeam()
-	titanSoul.soul.seatedNpcPilot.weapon				= "mp_weapon_rspn101"
+	titanSoul.soul.seatedNpcPilot.weapon				= "mp_weapon_rspn101_og"
 	titanSoul.soul.seatedNpcPilot.weaponMods			= []
 	entity weapon = pilot.GetActiveWeapon()
 	if( IsValid( weapon ) )

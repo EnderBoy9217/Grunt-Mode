@@ -53,6 +53,7 @@ void function GamemodeAITdm_Init()
 
 	if ( GetCurrentPlaylistVarInt( "aitdm_archer_grunts", 0 ) == 0 )
 	{
+		// this one is hardcoded for "pilot" weapons, as only these weapons have the mod "npc_elite_weapon"
 		AiGameModes_SetGruntWeapons( [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og" ] )
 		AiGameModes_SetSpectreWeapons( [ "mp_weapon_defender", "mp_weapon_sniper", "mp_weapon_doubletake", "mp_weapon_hemlok_smg" ] )
 	}
