@@ -120,6 +120,9 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 	if ( victim.GetClassName() == "npc_spectre" )
 		score = 2
 
+	if ( victim.GetClassName() == "npc_stalker" )
+		score = 2
+
 	if ( victim.GetClassName() == "npc_super_spectre" )
 		score = 5
 

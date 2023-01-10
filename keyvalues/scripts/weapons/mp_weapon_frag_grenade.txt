@@ -25,6 +25,7 @@ WeaponData
 		}
 		grunt_mode
 		{
+			"ammo_per_shot"					"200"
 			"regen_ammo_refill_rate"		"*0"
 		}
 	}

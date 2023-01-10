@@ -2,15 +2,22 @@ untyped
 
 global function BecomesGruntMode_Init
 
-const array<string> RESPAWN_SHIP_ALLOWED_MAPS = [ "mp_wargames", "mp_forwardbase_kodai", "mp_angel_city", "mp_colony02", "mp_homestead", "mp_black_water_canal" ]
+table< string, bool > playerChatterTable
+array<string> GRUNT_CHATTERS = [ "diag_sp_intro_WD104_24_01_mcor_grunt1" ]
+//"diag_sp_intro_WD103_02_01_mcor_grunt2" Backup! Backup!
+//"diag_sp_intro_WD104_26_01_mcor_grunt3" We can't stay here, move, move!
+//"diag_sp_ReaperTown_BM103_01a_01_mcor_grunt2" Look, a pilot! now they're doing our favor
+//"diag_sp_intro_WD104_24_01_mcor_grunt1" They're trying to corner us!
 
 void function BecomesGruntMode_Init()
 {
 	PrecacheModel( $"models/humans/grunts/imc_grunt_shield_captain.mdl" )
 
+	AddCallback_OnClientConnected( OnClientConnected )
 	AddCallback_OnPlayerRespawned( OnPlayerRespawned )
 	AddCallback_OnPlayerGetsNewPilotLoadout( OnPlayerChangeLoadout )
 	AddCallback_OnPlayerKilled( StartKillerOutline )
+	AddCallback_OnPlayerKilled( OnGruntKilled )
 
 	AddSpawnCallback( "npc_soldier", PilotConfig )
 	AddSpawnCallback( "npc_marvin", MarvinConfig )
@@ -58,8 +65,8 @@ void function SpectreConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		soldier.SetMaxHealth( 150 )
-		soldier.SetHealth( 150 )
+		soldier.SetMaxHealth( 170 )
+		soldier.SetHealth( 170 )
 		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
@@ -69,8 +76,8 @@ void function StalkerConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		soldier.SetMaxHealth( 200 )
-		soldier.SetHealth( 200 )
+		soldier.SetMaxHealth( 250 )
+		soldier.SetHealth( 250 )
 		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
@@ -119,12 +126,107 @@ void function DropshipConfig( entity soldier )
 	}
 }
 
+void function OnClientConnected( entity player )
+{
+	playerChatterTable[player.GetUID()] <- false
+	AddPlayerHeldButtonEventCallback( player, IN_USE, CallbackFuncCornerUs, 0.3 )
+	AddButtonPressedPlayerInputCallback( player, IN_USE, CallbackFuncSpotEnemy )
+}
+
+void function CallbackFuncCornerUs( entity player )
+{
+	thread CornerUsChatterThink( player )
+}
+
+void function CornerUsChatterThink( entity player )
+{
+	string uid = player.GetUID()
+	if( playerChatterTable[uid] )
+		return
+	if( !IsAlive( player ) )
+		return
+	//print( "Setting Chatter Unusable" )
+	string curChatter = GRUNT_CHATTERS[ RandomInt( GRUNT_CHATTERS.len() ) ]
+	EmitSoundOnEntity( player, curChatter )
+	thread DelayedRestoreBattleChatter( uid, 3 )
+	//print( "Reset Chatter Usage" )
+}
+
+void function CallbackFuncSpotEnemy( entity player )
+{
+	thread SpotEnemyChatterThink( player )
+}
+
+void function SpotEnemyChatterThink( entity player )
+{
+	string uid = player.GetUID()
+	if( playerChatterTable[uid] )
+		return
+	if( !IsAlive( player ) )
+		return
+	TraceResults traceResult = TraceLine( player.EyePosition(), player.EyePosition() + player.GetViewVector() * 1500, player, (TRACE_MASK_SHOT | CONTENTS_BLOCKLOS), TRACE_COLLISION_GROUP_NONE )
+	if( !IsValid( traceResult.hitEnt ) )
+	{
+		//print( "Didn't trace anything" )
+		return
+	}
+	if( !traceResult.hitEnt.IsNPC() )
+	{
+		//print( "hitEnt wasn't npc" )
+		return
+	}
+	if( traceResult.hitEnt.GetTeam() == player.GetTeam() )
+		return
+	array<string> chatterClasses = [ "npc_spectre", "npc_stalker", "npc_prowler", "npc_soldier", "npc_titan" ]
+	string className = traceResult.hitEnt.GetClassName()
+	//print( "hitEnt's classname: " + className )
+	if( !chatterClasses.contains( className ) )
+		return
+	switch( className )
+	{
+		case "npc_spectre":
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_reactSpectreEnemyMid_0" + string( RandomIntRange( 1, 3 ) ) )
+			thread DelayedRestoreBattleChatter( uid, 3 )
+			break
+		case "npc_stalker":
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engagingStalker_0" + string( RandomIntRange( 1, 2 ) ) )
+			thread DelayedRestoreBattleChatter( uid, 3 )
+			break
+		case "npc_prowler":
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engagingProwler_0" + string( RandomIntRange( 1, 2 ) ) )
+			thread DelayedRestoreBattleChatter( uid, 3 )
+			break
+		case "npc_soldier":
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engagepilotenemy_0" + string( RandomIntRange( 1, 7 ) ) )
+			thread DelayedRestoreBattleChatter( uid, 3 )
+			break
+		case "npc_titan":
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_enemytitanspotcall_0" + string( RandomIntRange( 1, 2 ) ) )
+			thread DelayedRestoreBattleChatter( uid, 5 )
+			break
+		case "npc_super_spectre":
+			if( CoinFlip() )
+				EmitSoundOnEntity( player, "diag_sp_ReaperTown_BM102_15_01_mcor_grunt3" )
+			else
+				EmitSoundOnEntity( player, "diag_sp_ReaperTown_BM102_16_01_mcor_grunt2" )
+			thread DelayedRestoreBattleChatter( uid, 3 )
+			break
+	}
+}
+
+void function DelayedRestoreBattleChatter( string uid, float delay )
+{
+	playerChatterTable[uid] = true
+	wait delay
+	playerChatterTable[uid] = false
+}
+
 void function OnPlayerRespawned( entity player )
 {	
 	BecomesGrunt_Model( player )
-	//if( RESPAWN_SHIP_ALLOWED_MAPS.contains( GetMapName() ) )
-	//	RespawnInDropShip( player )
-	//else
+	if( GetZiplineDropshipSpawns().len() != 0 )
+		RespawnInDropShip( player )
+	else
 		SpawnFromDroppod( player )
 	thread OnPlayerRespawned_Threaded( player )
 }
@@ -140,6 +242,67 @@ void function StartKillerOutline( entity victim, entity attacker, var damageInfo
 {
 	if( attacker.IsNPC() || attacker.IsPlayer() )
 		Highlight_SetDeathRecapHighlight( attacker, "killer_outline" )
+}
+
+void function OnGruntKilled( entity victim, entity attacker, var damageInfo )
+{
+	PlayEnemyKilledChatter( victim, attacker )
+	PlayFriendlyKilledChatter( victim, attacker )
+}
+
+void function PlayEnemyKilledChatter( entity victim, entity attacker )
+{
+	if( victim.IsPlayer() && attacker.IsPlayer() )
+		thread DelayedEnemyKilledChatter( attacker )
+}
+
+void function DelayedEnemyKilledChatter( entity player )
+{
+	string uid = player.GetUID()
+	if( playerChatterTable[uid] )
+		return
+	wait RandomFloatRange( 0.3, 0.5 )
+	if( IsAlive( player ) )
+	{
+		EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_killenemygrunt_0" + string( RandomIntRange( 1, 2 ) ) )
+	}
+	thread DelayedRestoreBattleChatter( uid, 3 )
+}
+
+void function PlayFriendlyKilledChatter( entity victim, entity attacker )
+{
+	int team = victim.GetTeam()
+	array<entity> nearbyAllies = GetPlayerArrayEx( "any", TEAM_ANY, TEAM_ANY, victim.GetOrigin(), 250 )
+	foreach( entity player in nearbyAllies )
+	{
+		if( IsValid( player ) )
+		{
+			if( player.GetTeam() == team )
+				thread DelayedFriendlyKilledChatter( player )
+		}
+	}
+}
+
+void function DelayedFriendlyKilledChatter( entity player )
+{
+	string uid = player.GetUID()
+	if( playerChatterTable[uid] )
+		return
+	wait RandomFloatRange( 0.3, 0.5 )
+	if( IsAlive( player ) )
+	{
+		array<entity> nearbyAllies = GetPlayerArrayEx( "any", player.GetTeam(), TEAM_ANY, player.GetOrigin(), 250 )
+		if( nearbyAllies.len() == 0 )
+		{
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_squaddeplete" )
+			thread DelayedRestoreBattleChatter( uid, 5 )
+		}
+		else
+		{
+			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_allygruntdown" )
+			thread DelayedRestoreBattleChatter( uid, 3 )
+		}
+	}
 }
 
 void function OnPlayerChangeLoadout( entity player , PilotLoadoutDef p)
