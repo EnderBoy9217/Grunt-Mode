@@ -1,7 +1,7 @@
 {
 	"Name" : "Grunt Mode",
-	"Description" : "You're now a grunt",
-	"Version": "2.1.2",
+	"Description" : "You're now a grunt, replaces Attrition gamemode.",
+	"Version": "2.0.0",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
 
