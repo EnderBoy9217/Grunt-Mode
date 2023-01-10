@@ -2,9 +2,7 @@ untyped
 
 //To-do List
 //Set spectre to specialist model on rodeo/dropship or prevent it
-//Delete Care package after grab
-//Rebalance spawn
-//add stalker + reaper???
+//add stalker + reaper??? (Fix above problem)
 
 global function BecomesGruntMode_Init
 
