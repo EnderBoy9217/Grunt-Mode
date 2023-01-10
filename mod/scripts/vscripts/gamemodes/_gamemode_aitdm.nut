@@ -1,10 +1,10 @@
 untyped
 global function GamemodeAITdm_Init
 
-const SQUADS_PER_TEAM = 3
+const SQUADS_PER_TEAM = 6
 const REAPERS_PER_TEAM = 2
 
-const MARVINS_PER_TEAM = 0
+const MARVINS_PER_TEAM = 1
 const PROWLERS_PER_TEAM = 4
 const PILOTS_PER_TEAM = 2
 
@@ -68,6 +68,7 @@ void function GamemodeAITdm_Init()
 	//ClassicMP_ForceDisableEpilogue( true )
 	Riff_ForceBoostAvailability( eBoostAvailability.Disabled )
 	Riff_ForceTitanAvailability( eTitanAvailability.Never )
+	SetLoadoutGracePeriodEnabled( false )
 }
 
 //------------------------------------------------------
@@ -96,8 +97,8 @@ void function OnPlayerConnected( entity player )
 
 void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 {
-	if ( !( victim != attacker && attacker.IsPlayer() || attacker.IsTitan() && attacker.GetBossPlayer() != null && GetGameState() == eGameState.Playing ) ) //add getowner to this since it crash my game everytime when am trying to deploy a npctitan without a owner
-		return
+	if ( !( victim != attacker && GetGameState() == eGameState.Playing ) ) //add getowner to this since it crash my game everytime when am trying to deploy a npctitan without a owner
+		return //edited line so ai SHOULD give points
 
 	int score
 	string eventName
@@ -109,35 +110,41 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 	//		score = ScoreEvent_GetPointValue( GetScoreEvent( eventName ) )
 	//}
 
-	if ( victim.IsPlayer() )
-		score = 3
+	if ( victim.IsPlayer() ) //Player
+		score = 4
+
+	if( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Shield Captain
+		score = 6
+	
+	if( victim.GetModelName() == $"models/humans/pilots/pilot_light_ged_m.mdl" ) //Specialist
+		score = 6
+	
+	if ( victim.GetModelName() == $"models/robots/spectre/imc_spectre.mdl" ) //Player Spectre
+		score = 5
 
 	if ( victim.GetClassName() == "npc_marvin" )
-		score = 1
+		score = 0
 
 	if ( victim.GetClassName() == "npc_prowler" )
-		score = 2
+		score = 5
 
 	if ( victim.GetClassName() == "npc_spectre" )
 		score = 2
 
 	if ( victim.GetClassName() == "npc_stalker" )
-		score = 2
+		score = 3
 
-	if ( victim.GetClassName() == "npc_super_spectre" )
+	if ( victim.GetClassName() == "npc_super_spectre" ) //Reaper
 		score = 5
 
 	if ( victim.GetClassName() == "npc_soldier" )
-		score = 5
+		score = 1
 	
 	if ( victim.GetClassName() == "npc_drone" )
 		score = 0
 
 	if ( victim.GetClassName() == "npc_gunship" )
-		score = 5
-
-	if( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl" || victim.GetModelName() == $"models/humans/pilots/pilot_light_ged_m.mdl" )
-		score = 5
+		score = 10
 
 	// Player ejecting triggers this without the extra check
 	if ( victim.IsTitan() && victim.GetBossPlayer() != attacker )
@@ -145,7 +152,8 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 
 	// make npc able to earn score?
 	AddTeamScore( attacker.GetTeam(), score )
-	if( !attacker.IsNPC() )
+
+	if( attacker.IsPlayer() || attacker.IsTitan() && attacker.GetBossPlayer() != null )
 	{
 		attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
 		attacker.SetPlayerNetInt( "AT_bonusPoints", attacker.GetPlayerGameStat( PGS_ASSAULT_SCORE ) )

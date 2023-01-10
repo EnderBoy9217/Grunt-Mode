@@ -12,7 +12,7 @@
 
 		stepheight					18
 		ziplineSpeed				600
-		wallrun                     1
+		wallrun                     0
 		doubleJump                  1
 		fallDeathHeight 			300
 
@@ -109,6 +109,14 @@
 			disable_wallrun
 			{
 				wallrun			"0"
+			}
+			enable_double
+			{
+				doublejump "1"
+			}
+			spectre_speedmod
+			{
+				slidevelocitydecay			2.0
 			}
 			r2_80
 			{
