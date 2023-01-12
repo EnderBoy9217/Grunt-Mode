@@ -29,12 +29,18 @@ global function RunToAndPlayAnimAndWait
 global function RunToAndPlayAnimGravity
 global function RunToAndPlayAnimGravityForced
 
+// modified!!! for some invalid model animations
+global function TrackHackedAnimationEnd
+global function GetBestModelNameForHackedAnim
+
 function Anim_Init()
 {
 	RegisterSignal( "NewViewAnim" )
 	RegisterSignal( "NewFirstPersonSequence" )
 	RegisterSignal( "ScriptAnimStop" )
 	RegisterSignal( "AnimEventKill" )
+	// oh no
+	RegisterSignal( "HackedAnimStart" )
 
 	AddGlobalAnimEvent( "enable_weapon", GlobalAnimEvent_EnableWeapon )
 	AddGlobalAnimEvent( "disable_weapon", GlobalAnimEvent_DisableWeapon	)
@@ -376,97 +382,198 @@ function __PlayAnim( guy, animation_name, reference = null, optionalTag = null, 
 	}
 	#endif
 
-	if ( guy.IsNPC() )
+	try // hack!
 	{
-		guy.EndSignal( "OnDeath" )
-		Assert( IsAlive( guy ), "Guy " + guy + " tried to play an anim, but it is not alive." )
-	}
-
-	if ( reference )
-	{
-		if ( reference == guy )
+		if ( guy.IsNPC() )
 		{
-			local position = GetRefPosition( reference )
-			local origin = position.origin
-			local angles = position.angles
-
-			if ( guy.IsNPC() )
-				guy.Anim_ScriptedPlayWithRefPoint( animation, origin, angles, blendTime )
-			else
-				guy.Anim_PlayWithRefPoint( animation, origin, angles, blendTime )
-
-			return
+			guy.EndSignal( "OnDeath" )
+			Assert( IsAlive( guy ), "Guy " + guy + " tried to play an anim, but it is not alive." )
 		}
 
-		if ( optionalTag )
+		if ( reference )
 		{
-			if ( typeof( reference ) == "vector" )
+			if ( reference == guy )
 			{
-				Assert( typeof( optionalTag ) == "vector", "Expected angles but got " + optionalTag )
+				local position = GetRefPosition( reference )
+				local origin = position.origin
+				local angles = position.angles
+
 				if ( guy.IsNPC() )
-					guy.Anim_ScriptedPlayWithRefPoint( animation, reference, optionalTag, blendTime )
+					guy.Anim_ScriptedPlayWithRefPoint( animation, origin, angles, blendTime )
 				else
-					guy.Anim_PlayWithRefPoint( animation, reference, optionalTag, blendTime )
+					guy.Anim_PlayWithRefPoint( animation, origin, angles, blendTime )
+
 				return
 			}
 
-			Assert( typeof( optionalTag ) == "string", "Passed invalid optional tag " + optionalTag )
+			if ( optionalTag )
+			{
+				if ( typeof( reference ) == "vector" )
+				{
+					Assert( typeof( optionalTag ) == "vector", "Expected angles but got " + optionalTag )
+					if ( guy.IsNPC() )
+						guy.Anim_ScriptedPlayWithRefPoint( animation, reference, optionalTag, blendTime )
+					else
+						guy.Anim_PlayWithRefPoint( animation, reference, optionalTag, blendTime )
+					return
+				}
 
-			if ( guy.GetParent() == reference )
-			{
-				if ( guy.IsNPC() )
-					guy.Anim_ScriptedPlay( animation )
+				Assert( typeof( optionalTag ) == "string", "Passed invalid optional tag " + optionalTag )
+
+				if ( guy.GetParent() == reference )
+				{
+					if ( guy.IsNPC() )
+						guy.Anim_ScriptedPlay( animation )
+					else
+						guy.Anim_Play( animation )
+				}
 				else
-					guy.Anim_Play( animation )
+				{
+					local attachIndex = reference.LookupAttachment( optionalTag )
+					local origin = reference.GetAttachmentOrigin( attachIndex )
+					local angles = reference.GetAttachmentAngles( attachIndex )
+					if ( guy.IsNPC() )
+					{
+						//local origin = reference.GetOrigin()
+						//local angles = reference.GetAngles()
+						guy.Anim_ScriptedPlayWithRefPoint( animation, origin, angles, blendTime )
+					}
+					else
+					{
+						//local animStartPos = guy.Anim_GetStartForRefEntity_Old( animation, reference, optionalTag )
+						//local origin = animStartPos.origin
+						//local angles = animStartPos.angles
+						guy.Anim_PlayWithRefPoint( animation, origin, angles, blendTime )
+					}
+				}
+				return
 			}
+		}
+		else
+		{
+			Assert( optionalTag == null, "Reference was null, but optionalTag was not. Did you mean to set the tag?" )
+		}
+
+		if ( reference != null && guy.GetParent() == reference )
+		{
+			if ( guy.IsNPC() )
+				guy.Anim_ScriptedPlay( animation )
 			else
-			{
-				local attachIndex = reference.LookupAttachment( optionalTag )
-				local origin = reference.GetAttachmentOrigin( attachIndex )
-				local angles = reference.GetAttachmentAngles( attachIndex )
-				if ( guy.IsNPC() )
-				{
-					//local origin = reference.GetOrigin()
-					//local angles = reference.GetAngles()
-					guy.Anim_ScriptedPlayWithRefPoint( animation, origin, angles, blendTime )
-				}
-				else
-				{
-					//local animStartPos = guy.Anim_GetStartForRefEntity_Old( animation, reference, optionalTag )
-					//local origin = animStartPos.origin
-					//local angles = animStartPos.angles
-					guy.Anim_PlayWithRefPoint( animation, origin, angles, blendTime )
-				}
-			}
+				guy.Anim_Play( animation )
+
 			return
 		}
-	}
-	else
-	{
-		Assert( optionalTag == null, "Reference was null, but optionalTag was not. Did you mean to set the tag?" )
-	}
 
-	if ( reference != null && guy.GetParent() == reference )
-	{
+		if ( !reference )
+			reference = guy
+
+		local origin = reference.GetOrigin()
+		local angles = reference.GetAngles()
+
 		if ( guy.IsNPC() )
-			guy.Anim_ScriptedPlay( animation )
+			guy.Anim_ScriptedPlayWithRefPoint( animation, origin, angles, blendTime )
 		else
-			guy.Anim_Play( animation )
-
-		return
+			guy.Anim_PlayWithRefPoint( animation, origin, angles, blendTime )
+	}
+	catch( ex )
+	{
+		asset modelName = GetBestModelNameForHackedAnim( guy )
+		asset orgModel = guy.GetModelName()
+		guy.SetModel( modelName )
+		//print( "Model animation error! Resetting to " + string( modelName ) )
+		thread __PlayAnim( guy, animation_name, reference, optionalTag, blendTime )
+		thread TrackHackedAnimationEnd( guy, orgModel )
 	}
 
-    if ( !reference )
-	    reference = guy
+}
 
-    local origin = reference.GetOrigin()
-    local angles = reference.GetAngles()
+asset function GetBestModelNameForHackedAnim( entity guy )
+{
+	asset modelName = $"models/humans/pilots/pilot_medium_geist_m.mdl" // default
+	if( guy.IsMechanical() )
+		modelName = $"models/humans/pilots/pilot_light_ged_m.mdl"
+	if( guy.IsPlayer() )
+	{
+		if( guy.IsTitan() )
+			modelName = GetPlayerSettingsAssetForClassName( guy.s.storedPlayerSettings, "bodymodel" )
+		else
+			modelName = guy.GetPlayerSettingsAsset( "bodymodel" )
+	}
+	return modelName
+}
 
-	if ( guy.IsNPC() )
-		guy.Anim_ScriptedPlayWithRefPoint( animation, origin, angles, blendTime )
-	else
-		guy.Anim_PlayWithRefPoint( animation, origin, angles, blendTime )
+void function TrackHackedAnimationEnd( guy, asset orgModel )
+{
+	expect entity( guy )
+	if( !IsValid( guy ) )
+		return
 
+	guy.Signal( "HackedAnimStart" )
+	guy.EndSignal( "OnDestroy" )
+	guy.EndSignal( "OnAnimationInterrupted" )
+	guy.EndSignal( "OnAnimationDone" )
+
+	OnThreadEnd(
+		function():( guy, orgModel )
+		{
+			if( IsValid( guy ) )
+			{
+				if( guy.IsTitan() && guy.IsPlayer() )
+				{
+					thread TrackPlayerBecomePilot( guy, orgModel )
+					return
+				}
+				else if( !guy.IsTitan() )
+				{
+					guy.SetModel( orgModel )
+					//print( "Hacked animation end! resetting model to " + string( orgModel ) )
+				}
+			}
+		}
+	)
+
+	WaitForever()
+}
+
+void function TrackPlayerBecomePilot( entity player, asset orgModel )
+{
+	//print( "Hacked player has become titan, waiting for leaving.." )
+	player.EndSignal( "OnDeath" )
+	player.EndSignal( "OnDestroy" )
+	player.EndSignal( "HackedAnimStart" )
+	
+	table result =  WaitSignal( player, "DisembarkingTitan", "TitanEjectionStarted" )
+	if( result.signal == "TitanEjectionStarted" )
+	{
+		//print( "Player titan ejecting!" )
+		while( player.IsTitan() )
+		{
+			WaitFrame()
+		}
+		/* // will cause some delay
+		entity soul = player.GetTitanSoul()
+		while( IsValid( soul ) )
+		{
+			if( soul.IsEjecting() )
+			{
+				print( "Player titan ejecting!" )
+				WaitFrame()
+			}
+			else
+				break
+		}
+		*/
+	}
+	if( result.signal == "DisembarkingTitan" )
+	{
+		player.EndSignal( "OnAnimationInterrupted" )
+		player.WaitSignal( "OnAnimationDone" )
+	}
+	if( IsAlive( player ) )
+	{
+		player.SetModel( orgModel )
+		//print( "Leaving titan! resetting model to " + string( orgModel ) )
+	}
 }
 
 function TeleportToAnimStart( _guy, animation_name, reference, optionalTag = null, smooth = false )
@@ -945,31 +1052,43 @@ function CalcSequenceBlendTime( FirstPersonSequenceStruct sequence, entity playe
 	if ( sequence.blendTime != CALCULATE_SEQUENCE_BLEND_TIME )
 		return
 
-	sequence.blendTime = 0
-	if ( ent && sequence.thirdPersonAnim != "" )
+	try
 	{
-		local start
-		if ( sequence.attachment != "" )
+		sequence.blendTime = 0
+		if ( ent && sequence.thirdPersonAnim != "" )
 		{
-			start = player.Anim_GetStartForRefEntity_Old( sequence.thirdPersonAnim, ent, sequence.attachment )
-		}
-		else
-		{
-			start = {}
-			start.origin <- ent.GetOrigin()
-			start.angles <- ent.GetAngles()
-		}
+			local start
+			if ( sequence.attachment != "" )
+			{
+				start = player.Anim_GetStartForRefEntity_Old( sequence.thirdPersonAnim, ent, sequence.attachment )
+			}
+			else
+			{
+				start = {}
+				start.origin <- ent.GetOrigin()
+				start.angles <- ent.GetAngles()
+			}
 
-		if ( sequence.teleport )
-		{
-			player.SetAbsOrigin( start.origin )
-			player.SetAbsAngles( start.angles )
+			if ( sequence.teleport )
+			{
+				player.SetAbsOrigin( start.origin )
+				player.SetAbsAngles( start.angles )
+			}
+			else
+			{
+				local dist = Distance( player.GetOrigin(), start.origin )
+				sequence.blendTime = GraphCapped( dist, 0, 350, 0.25, 0.9 )
+			}
 		}
-		else
-		{
-			local dist = Distance( player.GetOrigin(), start.origin )
-			sequence.blendTime = GraphCapped( dist, 0, 350, 0.25, 0.9 )
-		}
+	}
+	catch( ex )
+	{
+		asset modelName = GetBestModelNameForHackedAnim( player )
+		asset orgModel = player.GetModelName()
+		player.SetModel( modelName )
+		print( "Model animation error! resetting to " + string( modelName ) )
+		thread CalcSequenceBlendTime( sequence, player, ent )
+		thread TrackHackedAnimationEnd( player, orgModel )
 	}
 }
 
@@ -1038,7 +1157,7 @@ void function FirstPersonSequence( FirstPersonSequenceStruct sequence, entity pl
 	}
 
 	//figure out if we have/should do a first person sequence and handle Spawn slots.
-	bool doFirstPersonAnim = sequence.firstPersonAnim != ""
+	bool doFirstPersonAnim = sequence.firstPersonAnim != "" && player.IsPlayer() // check for npc executions
 
 	entity firstPersonProxy
 	if ( doFirstPersonAnim )
