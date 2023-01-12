@@ -520,7 +520,7 @@ void function BecomesGrunt_Model( entity player )
 					player.SetMaxHealth( 70 )
 					break
 				case 6: //Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
+					pModel = "models/robots/spectre/imc_spectre.mdl"
 					SendHudMessage(player, "Respawn as Spectre: Have extra health and Double Jump with a Volt, at reduced slide speed",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					player.GiveWeapon( "mp_weapon_hemlok_smg")
 					antiTitanTrue = false
@@ -528,7 +528,7 @@ void function BecomesGrunt_Model( entity player )
 					pMods = "Spectre"
 					break
 				case 7: //Sniper Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl" //Workaround for rodeo/dropship
+					pModel = "models/robots/spectre/imc_spectre.mdl"
 					SendHudMessage(player, "Respawn as Sniper Spectre: Spectre stats with a Kraber or Doubletake and a charge rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					player.GiveWeapon( CSNIPER[ RandomInt( CSNIPER.len() ) ] )
 					antiTitanTrue = true
@@ -624,7 +624,7 @@ void function BecomesGrunt_Model( entity player )
 					player.SetMaxHealth( 70 )
 					break
 				case 6: //Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl" //Cannot currently use spectre model for rodeo/dropship, this is workaround
+					pModel = "models/robots/spectre/imc_spectre.mdl" //Cannot currently use spectre model for rodeo/dropship, this is workaround
 					SendHudMessage(player, "Respawn as Spectre: Have extra health and Double Jump with a Volt, at reduced slide speed",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					player.GiveWeapon( "mp_weapon_hemlok_smg")
 					antiTitanTrue = false
@@ -632,7 +632,7 @@ void function BecomesGrunt_Model( entity player )
 					pMods = "Spectre"
 					break
 				case 7: //Sniper Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
+					pModel = "models/robots/spectre/imc_spectre.mdl"
 					SendHudMessage(player, "Respawn as Sniper Spectre: Spectre stats with a Kraber or Doubletake and a charge rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					player.GiveWeapon( CSNIPER[ RandomInt( CSNIPER.len() ) ] )
 					antiTitanTrue = true
@@ -704,6 +704,10 @@ void function BecomesGrunt_Model( entity player )
 		else if (pModel == "models/humans/grunts/imc_grunt_lmg.mdl")
 		{
 			player.SetModel( $"models/humans/grunts/imc_grunt_lmg.mdl")
+		}
+		else if (pModel == "models/robots/spectre/imc_spectre.mdl")
+		{
+			player.SetModel( $"models/robots/spectre/imc_spectre.mdl")
 		}
 	}
 }
