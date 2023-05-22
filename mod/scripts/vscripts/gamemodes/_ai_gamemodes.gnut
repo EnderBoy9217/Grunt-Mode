@@ -27,7 +27,7 @@ global function GetValidIntroDropShipSpawn
 
 
 const INTRO_DROPSHIP_CUTOFF = 2000
-//h
+
 struct
 {
 	array< string > gruntWeapons = [ "mp_weapon_rspn101" ]
