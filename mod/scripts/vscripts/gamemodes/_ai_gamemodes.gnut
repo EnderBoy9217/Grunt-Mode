@@ -2,8 +2,7 @@ untyped
 
 global function AiGameModes_Init
 
-global function AiGameModes_SetGruntWeapons
-global function AiGameModes_SetSpectreWeapons
+global function AiGameModes_SetNPCWeapons
 
 global function AiGameModes_SpawnDropShip
 global function AiGameModes_SpawnDropPod
@@ -27,12 +26,22 @@ global function GetValidIntroDropShipSpawn
 
 
 const INTRO_DROPSHIP_CUTOFF = 2000
-//h
+
 struct
 {
-	array< string > gruntWeapons = [ "mp_weapon_rspn101" ]
-	array< string > spectreWeapons = [ "mp_weapon_hemlok_smg" ]
+	table< string, array<string> > npcWeaponsTable // npcs have their default weapon in aisettings file
 } file
+
+//------------------------------------------------------
+
+void function AiGameModes_SetNPCWeapons( string npcClass, array<string> weapons )
+{
+	if ( !( npcClass in file.npcWeaponsTable ) )
+		file.npcWeaponsTable[ npcClass ] <- []
+	file.npcWeaponsTable[ npcClass ] = weapons
+}
+
+//------------------------------------------------------
 
 const array<string> WEAPONS = [ "mp_weapon_alternator_smg", "mp_weapon_arc_launcher", "mp_weapon_autopistol", "mp_weapon_car", "mp_weapon_defender", "mp_weapon_dmr", "mp_weapon_doubletake", "mp_weapon_epg", "mp_weapon_esaw", "mp_weapon_g2", "mp_weapon_hemlok", "mp_weapon_hemlok_smg", "mp_weapon_lmg", "mp_weapon_lstar", "mp_weapon_mastiff", "mp_weapon_mgl", "mp_weapon_pulse_lmg", "mp_weapon_r97", "mp_weapon_rocket_launcher", "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_semipistol", "mp_weapon_shotgun", "mp_weapon_shotgun_pistol", "mp_weapon_smr", "mp_weapon_sniper", "mp_weapon_softball", "mp_weapon_vinson", "mp_weapon_wingman", "mp_weapon_wingman_n" ]
 const array<string> MODS = [ "pas_run_and_gun", "threat_scope", "pas_fast_ads", "pas_fast_reload", "extended_ammo", "pas_fast_swap" ]
@@ -86,17 +95,6 @@ void function ProwlerPrecache()
     PrecacheModel($"models/creatures/prowler/r2_prowler.mdl")
 }
 
-//------------------------------------------------------
-
-void function AiGameModes_SetGruntWeapons( array< string > weapons )
-{
-	file.gruntWeapons = weapons
-}
-
-void function AiGameModes_SetSpectreWeapons( array< string > weapons )
-{
-	file.spectreWeapons = weapons
-}
 
 //------------------------------------------------------
 
@@ -121,7 +119,7 @@ void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int c
 	
 	foreach ( guy in guys )
 	{
-		ReplaceWeapon( guy, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
+		SetUpNPCWeapons( guy )
 		guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	}
 	
@@ -148,18 +146,7 @@ void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string
 			entity npc = CreateNPC( "npc_soldier", team, pos,<0,0,0> )
 			DispatchSpawn( npc )
 			SetSquad( npc, squadName )
-			ReplaceWeapon( npc, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
-
-
-			/*{
-				case "npc_soldier":
-					ReplaceWeapon( npc, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
-					break
-
-				case "npc_spectre":
-					ReplaceWeapon( npc, file.spectreWeapons[ RandomInt( file.spectreWeapons.len() ) ], [] )
-					break
-			} */
+			SetUpNPCWeapons( npc )
 		
 			npc.SetParent( pod, "ATTACH", true )
 		
@@ -172,7 +159,7 @@ void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string
 			entity npc = CreateNPC( "npc_spectre", team, pos,<0,0,0> )
 			DispatchSpawn( npc )
 			SetSquad( npc, squadName )
-			ReplaceWeapon( npc, file.spectreWeapons[ RandomInt( file.spectreWeapons.len() ) ], [] )
+			SetUpNPCWeapons( npc )
 		
 			npc.SetParent( pod, "ATTACH", true )
 		
@@ -187,6 +174,29 @@ void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string
 	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
 	
 	ActivateFireteamDropPod( pod, guys )
+}
+
+void function SetUpNPCWeapons( entity guy )
+{
+	string className = guy.GetClassName()
+	
+	array<string> mainWeapons
+	if ( className in file.npcWeaponsTable )
+		mainWeapons = file.npcWeaponsTable[ className ]
+	
+	if ( mainWeapons.len() == 0 ) // no valid weapons
+		return
+
+	// take off existing main weapons, or sometimes they'll have a archer by default
+	foreach ( entity weapon in guy.GetMainWeapons() )
+		guy.TakeWeapon( weapon.GetWeaponClassName() )
+
+	if ( mainWeapons.len() > 0 )
+	{
+		string weaponName = mainWeapons[ RandomInt( mainWeapons.len() ) ]
+		guy.GiveWeapon( weaponName )
+		guy.SetActiveWeaponByName( weaponName )
+	}
 }
 
 void function AiGameModes_SpawnReaper( vector pos, vector rot, int team, string aiSettings = "", void functionref( entity reaper ) reaperHandler = null )
@@ -408,7 +418,7 @@ void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot, int team 
 	pilot.SetHealth( 1000 )
 	Highlight_SetEnemyHighlight( pilot, "enemy_player" )
 
-	ReplaceWeapon( pilot, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], ["npc_elite_weapon"] )
+	SetUpNPCWeapons( pilot )
 	pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 
 	thread DropPodActiveThink( pod, 1 )
@@ -641,7 +651,7 @@ void function AiGameModes_SpawnPilotWithTitan( vector pos, vector rot, int team,
 
 	foreach ( pilot in pilots )
 	{
-		ReplaceWeapon( pilot, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], ["npc_elite_weapon"] )
+		SetUpNPCWeapons( pilot )
 		pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	}
 	
@@ -806,11 +816,13 @@ void function TitanHandler( entity titan )
 	}
 }
 
-void function AiGameModes_SpawnDropPodToGetWeapons( vector pos, vector rot )
+void function AiGameModes_SpawnDropPodToGetWeapons( vector pos, vector rot ) //Unused now
 {
+	/*
 	//thread DropWeaponAlert( pos, 500, 200 )
 	thread CarePackage_SpawnPoint( pos, 10 )
 	thread AiGameModes_SpawnDropPodToGetWeapons_Threaded( pos, rot )
+	*/
 }
 
 void function AiGameModes_SpawnDropPodToGetWeapons_Threaded( vector pos, vector rot, float lifeTime = 30 )
