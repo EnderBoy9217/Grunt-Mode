@@ -12,7 +12,7 @@
 
 		stepheight					18
 		ziplineSpeed				600
-		wallrun                     0
+		wallrun                     1
 		doubleJump                  1
 		fallDeathHeight 			300
 

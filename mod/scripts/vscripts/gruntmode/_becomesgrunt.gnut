@@ -166,7 +166,6 @@ void function OnClientConnected( entity player )
 	AddPlayerHeldButtonEventCallback( player, IN_USE, CallbackFuncCornerUs, 0.3 )
 	AddButtonPressedPlayerInputCallback( player, IN_USE, CallbackFuncSpotEnemy )
 	AddButtonPressedPlayerInputCallback( player, IN_WEAPON_CYCLE, SwitchClassesInput)
-	SendHudMessage(player, "Star grenades and Anti-Titan weapons are unavailable in this gamemode",  -1, 0.2, 255, 255, 255, 255, 0.15, 6, 1)
 }
 
 void function SwitchClassesInput( entity player ) //Allow user to switch classes
@@ -176,62 +175,195 @@ void function SwitchClassesInput( entity player ) //Allow user to switch classes
 
 void function SwitchClasses( entity player )
 {
-	shownClass[player] += 1
+	if (!IsAlive( player ))
+	{
+		print("Player is dead")
+		shownClass[player] += 1
 		if (shownClass[player] == 8)
 		{
 			shownClass[player] <- 0
 		}
-}
-
-
-void function LoadoutScreen( entity player, entity attacker, var damageInfo )
-{
-	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
-	score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
-	print(score)
-	int selected = selectedClass[player]
-	int shown = shownClass[player]	
-	
-	//if (shown == 0)
-
-}
-
-void function ShowCycle( entity player, int shown, int selected)
-{
-	NSCreateStatusMessageOnPlayer(player, "title","description", "1")
-	NSCreateStatusMessageOnPlayer(player,"2","2", "2")
-	NSCreateStatusMessageOnPlayer(player, "3","3", "3")
-	NSCreateStatusMessageOnPlayer(player,"4","4", "4")
-
-
-}
-
-function determineClass( int classNum )
-{
-	switch( classNum )
-	{
-		case 0:
-			return "Rifleman"
-		case 1:
-			return "Communications"
-		case 2:
-			return "Support"
-		case 3:
-			return "Heavy - 10 points"
-		case 4:
-			return "Shield Captain - 15 points"
-		case 5:
-			return "Specialist - 30 points"
-		case 6:
-			return "Spectre - 30 points"
-		case 7:
-			return "Sniper Spectre - 40 points"
-		default:
-			return "Error"
+		int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+		UpdateCycle( player, shownClass[player], selectedClass[player], score)
 	}
 }
 
 
+void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //Happens on player killed
+{
+	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
+	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	print("Player Score:")
+	print(score)
+	int selected = selectedClass[player]
+	shownClass[player] = selected
+	int shown = selected
+	ShowCycle(player,shown,selected, score)
+}
+
+void function UpdateCycle( entity player, int shown, int selected, int score)
+{
+	string title1 = ""
+	string title2 = ""
+	string title3 = ""
+	string title4 = ""
+	int classScore = 0
+	string str1 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title1 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str2 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title2 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str3 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title3 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str4 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title4 = "[LOCKED] "
+	}
+	if (title1 == "")
+	{
+		selectedClass[player] = shownClass[player]
+	}
+	NSEditStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
+	NSEditStatusMessageOnPlayer(player,"",title2 + str2, "status2")
+	NSEditStatusMessageOnPlayer(player,"",title3 + str3, "status3")
+	NSEditStatusMessageOnPlayer(player,"",title4 + str4, "status4")
+}
+
+void function ShowCycle( entity player, int shown, int selected, int score)
+{
+	string title1 = ""
+	string title2 = ""
+	string title3 = ""
+	string title4 = ""
+	int classScore = 0
+	string str1 = expect string(determineClass( shown ))
+	if (classScore > score)
+	{
+		title1 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str2 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title2 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str3 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title3 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str4 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title4 = "[LOCKED] "
+	}
+	NSCreateStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
+	NSCreateStatusMessageOnPlayer(player,"",title2 + str2, "status2")
+	NSCreateStatusMessageOnPlayer(player,"",title3 + str3, "status3")
+	NSCreateStatusMessageOnPlayer(player,"",title4 + str4, "status4")
+
+}
+
+void function ClearCycle( entity player )
+{
+	NSDeleteStatusMessageOnPlayer(player, "status1")
+	NSDeleteStatusMessageOnPlayer(player, "status2")
+	NSDeleteStatusMessageOnPlayer(player, "status3")
+	NSDeleteStatusMessageOnPlayer(player, "status4")
+}
+
+function increaseShown( int shown)
+{
+	shown++
+	if (shown == 8)
+	{
+		shown = 0
+	}
+	return shown
+}
+
+function determineClass( int classNum )
+{
+	string returnClass = "Error"
+	switch( classNum )
+	{
+		case 0:
+			returnClass = "Rifleman"
+			break
+		case 1:
+			returnClass = "Communications"
+			break
+		case 2:
+			returnClass = "Support"
+			break
+		case 3:
+			returnClass = "Heavy - 10 points"
+			break
+		case 4:
+			returnClass = "Shield Captain - 25 points"
+			break
+		case 5:
+			returnClass = "Specialist - 25 points"
+			break
+		case 6:
+			returnClass = "Spectre - 30 points"
+			break
+		case 7:
+			returnClass = "Sniper Spectre - 40 points"
+			break
+		default:
+			break
+	}
+	return returnClass
+}
+
+function determineClassScore( int classNum )
+{
+	switch( classNum )
+	{
+		case 0:
+			return 0
+		case 1:
+			return 0
+		case 2:
+			return 0
+		case 3:
+			return 10
+		case 4:
+			return 25
+		case 5:
+			return 25
+		case 6:
+			return 30
+		case 7:
+			return 40
+		default:
+			print("Invalid Classnumber, fatal error")
+			print(classNum)
+			return null
+	}
+}
 
 void function CallbackFuncCornerUs( entity player )
 {
@@ -337,15 +469,13 @@ void function OnPlayerRespawned( entity player )
 	//if( GetZiplineDropshipSpawns().len() != 0 )
 	//	RespawnInDropShip( player )
 	//else
-		SpawnFromDroppod( player )
-		if (hasSpawned[player] != true)
-		{
-			SendHudMessage(player, "Star grenades and Anti-Titan weapons are unavailable in this gamemode",  -1, 0.2, 255, 255, 255, 255, 0.15, 6, 1)
-			hasSpawned[player] = true
-			TakeAllWeapons( player )
-			player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, ["grunt_mode"] )
-			BecomesGrunt_Random( player )
-		}
+	TakeAllWeapons(player)
+	BecomesGrunt_Random(player) //Temp so I have working version
+	SpawnFromDroppod( player )
+	if (hasSpawned[player] != true)
+	{
+		hasSpawned[player] = true
+	}
 	thread OnPlayerRespawned_Threaded( player )
 }
 
@@ -354,9 +484,7 @@ void function OnPlayerRespawned_Threaded( entity player )
 	WaitFrame()
 	if( IsValid(player) )
 		PlayerEarnMeter_SetMode( player, eEarnMeterMode.DISABLED )	//彻底关闭强化(泰坦)条
-	TakeAllWeapons( player )
-	player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, ["grunt_mode"] )
-	BecomesGrunt_Random(player) //Temp so I have working version
+	ClearCycle(player)
 }
 
 void function StartKillerOutline( entity victim, entity attacker, var damageInfo )
@@ -543,7 +671,7 @@ void function RandomMods(entity player, string weapon, array<string> mods)
 			break
 		case 1: // Mod
 			player.GiveWeapon(weapon,mods)
-			print("Gave modded weapon")
+			//print("Gave modded weapon")
 			break
 		default:
 			break
