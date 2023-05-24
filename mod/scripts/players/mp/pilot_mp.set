@@ -6,7 +6,7 @@
 		class						"pilot"
 		subclass					"wallrun"
 
-		// changed for grunts.
+		// changed for grunts
 		jumpheight					80 // 60
 		gravityscale				1.10
 

@@ -1,18 +1,21 @@
 untyped
 global function GamemodeAITdm_Init
-//h
-const SQUADS_PER_TEAM = 6
+
+const SQUADS_PER_TEAM = 5
 const REAPERS_PER_TEAM = 2
 
+const SPECIALISTS_PER_TEAM = 2
+const STALKERS_PER_TEAM = 4
 const MARVINS_PER_TEAM = 1
 const PROWLERS_PER_TEAM = 4
 const PILOTS_PER_TEAM = 2
 
 const TITANS_PER_TEAM = 0
-const GUNSHIPS_PER_TEAM = 2
+const GUNSHIPS_PER_TEAM = 1
 
 const LEVEL_SPECTRES = 0
 const LEVEL_STALKERS = 50
+const LEVEL_SPECIAL = 75 //Specialist
 const LEVEL_REAPERS = 125
 const LEVEL_GUNSHIPS = 200
 const LEVEL_TITANS = 250
@@ -29,6 +32,8 @@ struct
 
 	array< bool > marvins = [ false, false ]
 	array< bool > prowlers = [ false, false ]
+	array< bool > specialists = [ false, false ]
+	array< bool > stalkers = [ false, false ]
 	array< bool > weapondrops = [ false, false ]
 
 	array< bool > gunships = [ false, false ]
@@ -54,13 +59,15 @@ void function GamemodeAITdm_Init()
 	if ( GetCurrentPlaylistVarInt( "aitdm_archer_grunts", 0 ) == 0 )
 	{
 		// this one is hardcoded for "pilot" weapons, as only these weapons have the mod "npc_elite_weapon"
-		AiGameModes_SetGruntWeapons( [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og" ] )
-		AiGameModes_SetSpectreWeapons( [ "mp_weapon_defender", "mp_weapon_sniper", "mp_weapon_doubletake", "mp_weapon_hemlok_smg" ] )
+		AiGameModes_SetNPCWeapons( "npc_soldier", [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og" ] )
+		AiGameModes_SetNPCWeapons( "npc_spectre", [ "mp_weapon_defender", "mp_weapon_sniper", "mp_weapon_doubletake", "mp_weapon_hemlok_smg" ] )
+		AiGameModes_SetNPCWeapons( "npc_soldier_specialist", [ "mp_weapon_mastiff", "mp_weapon_hemlok_smg", "mp_weapon_mgl" ] )
 	}
 	else
 	{
-		AiGameModes_SetGruntWeapons( [ "mp_weapon_rocket_launcher" ] )
-		AiGameModes_SetSpectreWeapons( [ "mp_weapon_rocket_launcher" ] )
+		AiGameModes_SetNPCWeapons( "npc_soldier", [ "mp_weapon_rocket_launcher" ] )
+		AiGameModes_SetNPCWeapons( "npc_spectre", [ "mp_weapon_rocket_launcher" ] )
+		AiGameModes_SetNPCWeapons( "npc_soldier_specialist", [ "mp_weapon_rocket_launcher" ] )
 	}
 
 	ScoreEvent_SetupEarnMeterValuesForMixedModes()
@@ -110,47 +117,47 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 	//		score = ScoreEvent_GetPointValue( GetScoreEvent( eventName ) )
 	//}
 
-	if ( victim.IsPlayer() ) //Player
+	if ( victim.IsPlayer() ) // Default Player
 		score = 4
 
-	if( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Shield Captain
+	if( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Player Shield Captain
 		score = 6
 	
-	if( victim.GetModelName() == $"models/humans/pilots/pilot_light_ged_m.mdl" ) //Specialist
+	if( victim.GetModelName() == $"models/humans/pilots/pilot_light_ged_m.mdl" ) //Player Specialist
 		score = 6
 	
 	if ( victim.GetModelName() == $"models/robots/spectre/imc_spectre.mdl" ) //Player Spectre
 		score = 5
 
-	if ( victim.GetClassName() == "npc_marvin" )
+	if ( victim.GetClassName() == "npc_marvin" ) // I would make it negative but i dont wanna crash
 		score = 0
 
-	if ( victim.GetClassName() == "npc_prowler" )
+	if ( victim.GetClassName() == "npc_prowler" ) // Prowler
 		score = 5
 
-	if ( victim.GetClassName() == "npc_spectre" )
+	if ( victim.GetClassName() == "npc_spectre" ) // AI Spectre
 		score = 2
 
-	if ( victim.GetClassName() == "npc_stalker" )
+	if ( victim.GetClassName() == "npc_stalker" ) // Stalker
 		score = 3
 
 	if ( victim.GetClassName() == "npc_super_spectre" ) //Reaper
 		score = 5
 
-	if ( victim.GetClassName() == "npc_soldier" )
+	if ( victim.GetClassName() == "npc_soldier" ) // AI Grunt
 		score = 1
 	
-	if ( victim.GetClassName() == "npc_drone" )
+	if ( victim.GetClassName() == "npc_drone" ) // Plasma Drone
 		score = 0
 
-	if ( victim.GetClassName() == "npc_gunship" )
+	if ( victim.GetClassName() == "npc_gunship" ) // Gunship (Needs tweaking)
 		score = 10
 
 	// Player ejecting triggers this without the extra check
-	if ( victim.IsTitan() && victim.GetBossPlayer() != attacker )
+	if ( victim.IsTitan() && victim.GetBossPlayer() != attacker ) // Titan
 		score += 10
 
-	// make npc able to earn score?
+	// make npc able to earn score, si
 	AddTeamScore( attacker.GetTeam(), score )
 
 	if( attacker.IsPlayer() || attacker.IsTitan() && attacker.GetBossPlayer() != null )
@@ -234,7 +241,7 @@ void function SpawnIntroBatch( int team )
 
 	thread Spawner( team )
 	thread SpawnerExtend( team )
-	thread SpawnerWeapons( team )
+	//thread SpawnerWeapons( team )
 }
 
 // Populates the match
@@ -308,6 +315,8 @@ void function SpawnerExtend( int team )
 
 			int marvinCount = GetNPCArrayEx( "npc_marvin", team, -1, <0,0,0>, -1 ).len()
 			int prowlerCount = GetNPCArrayEx( "npc_prowler", team, -1, <0,0,0>, -1 ).len()
+			int specialistCount = GetNPCArrayEx( "npc_soldier_specialist", team, -1, <0,0,0>, -1 ).len()
+			int stalkerCount = GetNPCArrayEx( "npc_stalker", team, -1, <0,0,0>, -1 ).len()
 			int gunshipCount = GetNPCArrayEx( "npc_gunship", team, -1, <0,0,0>, -1 ).len()
 	        int titanCount = GetNPCArrayEx( "npc_titan", team, -1, <0,0,0>, -1 ).len()
 	        int pilotCount = GetNPCArrayEx( "npc_soldier", team, -1, <0,0,0>, -1 ).len() + GetNPCArrayEx( "npc_titan", team, -1, <0,0,0>, -1 ).len()
@@ -374,6 +383,38 @@ void function SpawnerExtend( int team )
 					
 				}
 			}
+			
+			/*
+			// SPECIALIST
+			if ( file.specialists[ index ] )
+			{
+				string ent = "npc_soldier_specialist"
+				array< entity > points = SpawnPoints_GetDropPod()
+				if ( specialistCount < SPECIALISTS_PER_TEAM )
+				{
+					entity node = points[ GetSpawnPointIndex( points, team ) ]
+					//waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent )
+					AiGameModes_SpawnNPC( node.GetOrigin(), node.GetAngles(), team, ent )
+					
+				}
+			}
+			*/
+
+			/*
+			//Stalker
+			if ( file.stalkers[ index ] )
+			{
+				string ent = "npc_stalker"
+				array< entity > points = SpawnPoints_GetDropPod()
+				if ( stalkerCount < STALKERS_PER_TEAM )
+				{
+					entity node = points[ GetSpawnPointIndex( points, team ) ]
+					//waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent )
+					AiGameModes_SpawnNPC( node.GetOrigin(), node.GetAngles(), team, ent )
+					
+				}
+			}
+			*/
 		}
 		else
 			break
@@ -383,6 +424,7 @@ void function SpawnerExtend( int team )
 
 void function SpawnerWeapons( int team )
 {
+	/* Now unused - care package
 	//svGlobal.levelEnt.EndSignal( "GameStateChanged" )
 
 	while( true )
@@ -405,6 +447,7 @@ void function SpawnerWeapons( int team )
 		else
 			break
 	}
+	*/
 }
 
 // Based on points tries to balance match
@@ -428,14 +471,19 @@ void function Escalate( int team )
 			return
 
 		case LEVEL_STALKERS:
-			file.levels[ index ] = LEVEL_REAPERS
+			file.levels[ index ] = LEVEL_SPECIAL
+			file.stalkers[ index ] = true
 			file.marvins[ index ] = false
 			file.weapondrops[ index ] = true
 			file.prowlers[ index ] = true
 			//file.podEntities[ index ].append( "npc_stalker" )
 			SetGlobalNetInt( defcon, 3 )
 			return
-
+		case LEVEL_SPECIAL: //Specialists
+			file.levels[ index ] = LEVEL_REAPERS
+			file.specialists[ index ] = true
+			return
+			
 		case LEVEL_REAPERS:
 			file.levels[ index ] = LEVEL_GUNSHIPS
 			file.reapers[ index ] = true
@@ -507,6 +555,16 @@ void function SquadHandler( array<entity> guys )
 		guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 		guy.AssaultPoint( point )
 		guy.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
+		if (guy.GetClassName  == "npc_soldier")
+		{
+			guy.SetMaxHealth( 70 ) //New grunt health
+			guy.SetHealth( 70 )
+		}
+		else
+		{
+			guy.SetMaxHealth( 200 ) //New Spectre health
+			guy.SetHealth( 200 )
+		}
 		
 		// show on enemy radar
 		foreach ( player in players )
@@ -601,6 +659,8 @@ void function OnSpectreLeeched( entity spectre, entity player )
 void function ReaperHandler( entity reaper )
 {
 	array<entity> players = GetPlayerArrayOfEnemies( reaper.GetTeam() )
+	reaper.SetMaxHealth( 10000 )
+	reaper.SetHealth( 10000 )
 	foreach ( player in players )
 		reaper.Minimap_AlwaysShow( 0, player )
 

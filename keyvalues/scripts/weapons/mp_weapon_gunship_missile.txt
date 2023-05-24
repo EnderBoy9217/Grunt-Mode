@@ -32,7 +32,7 @@ WeaponData
 			"npc_max_range"   								"16000"
 
 			"npc_min_burst"									"10"
-			"npc_max_burst"									"10"
+			"npc_max_burst"									"30"
 			"npc_rest_time_between_bursts_min"				"0.2"
 			"npc_rest_time_between_bursts_max"				"0.3"
 			"npc_directed_fire_ang_limit_cos"				"0.985"	// 10 degree
