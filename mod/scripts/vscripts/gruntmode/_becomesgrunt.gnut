@@ -30,7 +30,8 @@ int rankUpG = 0
 int score = 0
 
 //Player tables
-global table<entity, bool> hasSpawned //Now mostly unused
+global table<entity, bool> hasSpawned
+global table<entity, bool> hasChanged 
 global table<entity, int> pRank
 global table<entity, int> shownClass
 global table<entity, int> selectedClass
@@ -157,6 +158,7 @@ void function DropshipConfig( entity soldier )
 void function OnClientConnected( entity player )
 {
 	hasSpawned[player] <- false	
+	hasChanged[player] <- false
 	pRank[player] <- 0
 	shownClass[player] <- 0
 	selectedClass[player] <- 0
@@ -166,7 +168,8 @@ void function OnClientConnected( entity player )
 	AddPlayerHeldButtonEventCallback( player, IN_USE, CallbackFuncCornerUs, 0.3 )
 	AddButtonPressedPlayerInputCallback( player, IN_USE, CallbackFuncSpotEnemy )
 	AddButtonPressedPlayerInputCallback( player, IN_WEAPON_CYCLE, SwitchClassesInput)
-	SendHudMessage(player, "Star grenades and Anti-Titan weapons are unavailable in this gamemode",  -1, 0.2, 255, 255, 255, 255, 0.15, 6, 1)
+	AddButtonPressedPlayerInputCallback( player, IN_FORWARD, SwitchClassesInput)
+	AddButtonPressedPlayerInputCallback( player, IN_RIGHT, SwitchClassesInput)
 }
 
 void function SwitchClassesInput( entity player ) //Allow user to switch classes
@@ -176,62 +179,208 @@ void function SwitchClassesInput( entity player ) //Allow user to switch classes
 
 void function SwitchClasses( entity player )
 {
-	shownClass[player] += 1
+	if (!IsAlive( player ))
+	{
+		shownClass[player] += 1
 		if (shownClass[player] == 8)
 		{
 			shownClass[player] <- 0
 		}
-}
-
-
-void function LoadoutScreen( entity player, entity attacker, var damageInfo )
-{
-	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
-	score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
-	print(score)
-	int selected = selectedClass[player]
-	int shown = shownClass[player]	
-	
-	//if (shown == 0)
-
-}
-
-void function ShowCycle( entity player, int shown, int selected)
-{
-	NSCreateStatusMessageOnPlayer(player, "title","description", "1")
-	NSCreateStatusMessageOnPlayer(player,"2","2", "2")
-	NSCreateStatusMessageOnPlayer(player, "3","3", "3")
-	NSCreateStatusMessageOnPlayer(player,"4","4", "4")
-
-
-}
-
-function determineClass( int classNum )
-{
-	switch( classNum )
-	{
-		case 0:
-			return "Rifleman"
-		case 1:
-			return "Communications"
-		case 2:
-			return "Support"
-		case 3:
-			return "Heavy - 10 points"
-		case 4:
-			return "Shield Captain - 15 points"
-		case 5:
-			return "Specialist - 30 points"
-		case 6:
-			return "Spectre - 30 points"
-		case 7:
-			return "Sniper Spectre - 40 points"
-		default:
-			return "Error"
+		int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+		UpdateCycle( player, shownClass[player], selectedClass[player], score)
 	}
 }
 
 
+void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //Happens on player killed
+{
+	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
+	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	print("Player Score:")
+	print(score)
+	int selected = selectedClass[player]
+	shownClass[player] = selected
+	int shown = selected
+	ShowCycle(player,shown,selected, score)
+	if (!hasChanged[player])
+	{
+		thread sendCycleInfo( player )
+		hasChanged[player] = true
+	}
+	sendScoreInfo( player )
+}
+
+void function UpdateCycle( entity player, int shown, int selected, int score)
+{
+	string title1 = ""
+	string title2 = ""
+	string title3 = ""
+	string title4 = ""
+	int classScore = 0
+	string str1 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title1 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str2 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title2 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str3 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title3 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str4 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title4 = "[LOCKED] "
+	}
+	if (title1 == "")
+	{
+		selectedClass[player] = shownClass[player]
+	}
+	NSEditStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
+	NSEditStatusMessageOnPlayer(player,"",title2 + str2, "status2")
+	NSEditStatusMessageOnPlayer(player,"",title3 + str3, "status3")
+	NSEditStatusMessageOnPlayer(player,"",title4 + str4, "status4")
+}
+
+void function ShowCycle( entity player, int shown, int selected, int score)
+{
+	string title1 = ""
+	string title2 = ""
+	string title3 = ""
+	string title4 = ""
+	int classScore = 0
+	string str1 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title1 = "[LOCKED] "
+		selectedClass[ player ] = 0
+	}
+	shown = expect int(increaseShown( shown ))
+	string str2 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title2 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str3 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title3 = "[LOCKED] "
+	}
+	shown = expect int(increaseShown( shown ))
+	string str4 = expect string(determineClass( shown ))
+	classScore = expect int(determineClassScore( shown ))
+	if (classScore > score)
+	{
+		title4 = "[LOCKED] "
+	}
+	NSCreateStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
+	NSCreateStatusMessageOnPlayer(player,"",title2 + str2, "status2")
+	NSCreateStatusMessageOnPlayer(player,"",title3 + str3, "status3")
+	NSCreateStatusMessageOnPlayer(player,"",title4 + str4, "status4")
+
+}
+
+void function ClearCycle( entity player )
+{
+	NSDeleteStatusMessageOnPlayer(player, "status1")
+	NSDeleteStatusMessageOnPlayer(player, "status2")
+	NSDeleteStatusMessageOnPlayer(player, "status3")
+	NSDeleteStatusMessageOnPlayer(player, "status4")
+}
+
+function increaseShown( int shown)
+{
+	shown++
+	if (shown == 8)
+	{
+		shown = 0
+	}
+	return shown
+}
+
+function determineClass( int classNum )
+{
+	string returnClass = "Error"
+	switch( classNum )
+	{
+		case 0:
+			returnClass = "Rifleman"
+			break
+		case 1:
+			returnClass = "Communications"
+			break
+		case 2:
+			returnClass = "Support"
+			break
+		case 3:
+			returnClass = "Heavy - 10 points"
+			break
+		case 4:
+			returnClass = "Shield Captain - 25 points"
+			break
+		case 5:
+			returnClass = "Specialist - 25 points"
+			break
+		case 6:
+			returnClass = "Spectre - 30 points"
+			break
+		case 7:
+			returnClass = "Sniper Spectre - 40 points"
+			break
+		default:
+			break
+	}
+	return returnClass
+}
+
+function determineClassScore( int classNum )
+{
+	switch( classNum )
+	{
+		case 0:
+			return 0
+		case 1:
+			return 0
+		case 2:
+			return 0
+		case 3:
+			return 10
+		case 4:
+			return 25
+		case 5:
+			return 25
+		case 6:
+			return 30
+		case 7:
+			return 40
+		default:
+			print("Invalid Classnumber, fatal error")
+			print(classNum)
+			return null
+	}
+}
+
+function RemoveScore( entity player, int classNum )
+{
+	int classScore = expect int(determineClassScore( classNum ))
+	usedScore[player] = usedScore[player] + classScore
+}
 
 void function CallbackFuncCornerUs( entity player )
 {
@@ -337,15 +486,17 @@ void function OnPlayerRespawned( entity player )
 	//if( GetZiplineDropshipSpawns().len() != 0 )
 	//	RespawnInDropShip( player )
 	//else
-		SpawnFromDroppod( player )
-		if (hasSpawned[player] != true)
-		{
-			SendHudMessage(player, "Star grenades and Anti-Titan weapons are unavailable in this gamemode",  -1, 0.2, 255, 255, 255, 255, 0.15, 6, 1)
-			hasSpawned[player] = true
-			TakeAllWeapons( player )
-			player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, ["grunt_mode"] )
-			BecomesGrunt_Random( player )
-		}
+	TakeAllWeapons(player)
+	if (hasSpawned[player])
+	{
+		BecomesGrunt_Class(player, selectedClass[player])
+		RemoveScore( player, selectedClass[player] )
+	}
+	else
+	{
+		BecomesGrunt_Random(player)
+	}
+	SpawnFromDroppod( player )
 	thread OnPlayerRespawned_Threaded( player )
 }
 
@@ -354,11 +505,33 @@ void function OnPlayerRespawned_Threaded( entity player )
 	WaitFrame()
 	if( IsValid(player) )
 		PlayerEarnMeter_SetMode( player, eEarnMeterMode.DISABLED )	//彻底关闭强化(泰坦)条
-	TakeAllWeapons( player )
-	player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, ["grunt_mode"] )
-	BecomesGrunt_Random(player) //Temp so I have working version
+	ClearCycle(player)
+	if (!hasSpawned[player])
+	{
+		hasSpawned[player] = true
+		thread sendPingInfo(player)
+	}
 }
 
+void function sendPingInfo( entity player )
+{
+	wait 16
+	print("Sending ping info")
+	NSSendInfoMessageToPlayer(player, "Hold interact to say a voiceline, or press interact to call out enemies")
+}
+
+void function sendScoreInfo( entity player )
+{
+	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	NSSendPopUpMessageToPlayer( player, "You have " + score + " points to spend")
+}
+
+void function sendCycleInfo( entity player )
+{
+	wait 1
+	print("Sending change info")
+	NSSendInfoMessageToPlayer(player, "Cycle weapons while in the deployment screen to switch classes")
+}
 void function StartKillerOutline( entity victim, entity attacker, var damageInfo )
 {
 	if( attacker.IsNPC() || attacker.IsPlayer() )
@@ -531,8 +704,6 @@ void function SetGruntSkin( entity player, string pMods, string pModel )
 	}
 }
 
-//void function BecomesGrunt_Class( entity player)
-
 void function RandomMods(entity player, string weapon, array<string> mods)
 {
 	int randomM = RandomInt(2)
@@ -543,7 +714,7 @@ void function RandomMods(entity player, string weapon, array<string> mods)
 			break
 		case 1: // Mod
 			player.GiveWeapon(weapon,mods)
-			print("Gave modded weapon")
+			//print("Gave modded weapon")
 			break
 		default:
 			break
@@ -551,6 +722,12 @@ void function RandomMods(entity player, string weapon, array<string> mods)
 }
 
 void function BecomesGrunt_Random( entity player )
+{
+	int classNum = RandomInt(6)
+	BecomesGrunt_Class( player, classNum )
+}
+
+void function BecomesGrunt_Class( entity player, int classNum )
 {
 	if( IsValid(player) )
 	{
@@ -560,28 +737,9 @@ void function BecomesGrunt_Random( entity player )
 		string pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
 		if( player.GetTeam() == TEAM_MILITIA )
 		{
-			int mltrandom = RandomInt(8)
-			switch( mltrandom )
+			switch( classNum )
 			{
-				case 0: //Heavy
-					pModel = "models/humans/grunts/mlt_grunt_lmg.mdl"
-					SendHudMessage(player, "Respawning as Heavy: Use a Spitfire LMG or Sidewinder and an Archer",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
-					if (weapon != "mp_weapon_smr")
-					{
-						RandomMods(player,weapon,["redline_sight"])
-					}
-					else
-					{
-						player.GiveWeapon("mp_weapon_smr")
-					}
-					player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitan = "mp_weapon_rocket_launcher"
-					antiTitanTrue = true
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 1: //Rifleman
+				case 0: //Rifleman
 					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
 					SendHudMessage(player, "Respawning as Riflemen: Use your given rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
@@ -591,7 +749,7 @@ void function BecomesGrunt_Random( entity player )
 					player.SetMaxHealth( 30 )
 					antiTitanTrue = false
 					break
-				case 2: //SMG 
+				case 1: //SMG 
 					pModel = "models/humans/grunts/mlt_grunt_smg.mdl"
 					SendHudMessage(player, "Respawning as Communications: Use your SMG",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					string weapon = CSMG[ RandomInt( CSMG.len() ) ]
@@ -608,12 +766,30 @@ void function BecomesGrunt_Random( entity player )
 					player.SetHealth( 30 )
 					player.SetMaxHealth( 30 )
 					break
-				case 3: //Shotgun
+				case 2: //Shotgun
 					pModel = "models/humans/grunts/mlt_grunt_shotgun.mdl"
 					SendHudMessage(player, "Respawning as Support: EVA-8 Shotgun",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
 					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 					antiTitanTrue = false
+					player.SetHealth( 30 )
+					player.SetMaxHealth( 30 )
+					break
+				case 3: //Heavy
+					pModel = "models/humans/grunts/mlt_grunt_lmg.mdl"
+					SendHudMessage(player, "Respawning as Heavy: Use a Spitfire LMG or Sidewinder and an Archer",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+					string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
+					if (weapon != "mp_weapon_smr")
+					{
+						RandomMods(player,weapon,["redline_sight"])
+					}
+					else
+					{
+						player.GiveWeapon("mp_weapon_smr")
+					}
+					player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
+					antiTitan = "mp_weapon_rocket_launcher"
+					antiTitanTrue = true
 					player.SetHealth( 30 )
 					player.SetMaxHealth( 30 )
 					break
@@ -632,7 +808,6 @@ void function BecomesGrunt_Random( entity player )
 					SendHudMessage(player, "Respawn as Specialist: Spawn 2 drones with special weapons and an MGL",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 					player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
-					
 					player.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ])
 					antiTitanTrue = true
 					antiTitan = "mp_weapon_mgl"
@@ -667,10 +842,45 @@ void function BecomesGrunt_Random( entity player )
 
 		if( player.GetTeam() == TEAM_IMC )
 		{
-			int imcrandom = RandomInt(8)
-			switch( imcrandom )
+			switch( classNum )
 			{
-				case 0: //Heavy
+				case 0: //Rifleman
+					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
+					SendHudMessage(player, "Respawning as Riflemen: Use your given rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+					string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
+					RandomMods(player,weapon,["hcog"])
+					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+					player.SetHealth( 30 )
+					player.SetMaxHealth( 30 )
+					antiTitanTrue = false
+					break
+				case 1: //SMG 
+					pModel = "models/humans/grunts/imc_grunt_smg.mdl"
+					SendHudMessage(player, "Respawning as Communications: Use your SMG",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+					string weapon = CSMG[ RandomInt( CSMG.len() ) ]
+					if (weapon != "mp_weapon_alternator_smg")
+					{
+						RandomMods(player,weapon,["holosight"])
+					}
+					else
+					{
+						RandomMods(player,weapon,["hcog"])
+					}
+					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+					antiTitanTrue = false
+					player.SetHealth( 30 )
+					player.SetMaxHealth( 30 )
+					break
+				case 2: //Shotgun
+					pModel = "models/humans/grunts/imc_grunt_shotgun.mdl"
+					SendHudMessage(player, "Respawning as Support: EVA-8 Shotgun",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+					RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
+					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+					antiTitanTrue = false
+					player.SetHealth( 30 )
+					player.SetMaxHealth( 30 )
+					break
+				case 3: //Heavy
 					pModel = "models/humans/grunts/imc_grunt_lmg.mdl"
 					SendHudMessage(player, "Respawning as Heavy: Use a Spitfire LMG or Sidewinder and an Archer",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 					string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
@@ -685,35 +895,6 @@ void function BecomesGrunt_Random( entity player )
 					antiTitan = "mp_weapon_rocket_launcher"
 					player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
 					antiTitanTrue = true
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 1: //Rifleman
-					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
-					SendHudMessage(player, "Respawning as Riflemen: Use your given rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
-					RandomMods(player,weapon,["hcog"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					antiTitanTrue = false
-					break
-				case 2: //SMG 
-					pModel = "models/humans/grunts/imc_grunt_smg.mdl"
-					SendHudMessage(player, "Respawning as Communications: Use your SMG",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CSMG[ RandomInt( CSMG.len() ) ]
-					RandomMods(player,weapon,["holosight"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 3: //Shotgun
-					pModel = "models/humans/grunts/imc_grunt_shotgun.mdl"
-					SendHudMessage(player, "Respawning as Support: EVA-8 Shotgun",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
 					player.SetHealth( 30 )
 					player.SetMaxHealth( 30 )
 					break
