@@ -22,16 +22,22 @@ array<string> CSMG = ["mp_weapon_r97", "mp_weapon_alternator_smg", "mp_weapon_ca
 array<string> CSPECIAL = [ "mp_weapon_hemlok_smg", "mp_weapon_mastiff" ] //Also uses mag launcher but excluded
 array<string> CSNIPER = [ "mp_weapon_doubletake", "mp_weapon_sniper" ] //Also uses charge rifle but excluded
 
+// SETTINGS
+//--------------------------------------------------------------
+int maxClasses = 8 //Number of pickable classes
+
+
+//-------------------------------------------------------------
+
+
 //placeholders to make gloabls
-string secondary = "mp_weapon_semipistol"
-string grenade = "mp_weapon_frag_grenade"
 int forceChange = 0
 int rankUpG = 0
 int score = 0
 
 //Player tables
 global table<entity, bool> hasSpawned
-global table<entity, bool> hasChanged 
+global table<entity, bool> hasChanged
 global table<entity, int> pRank
 global table<entity, int> shownClass
 global table<entity, int> selectedClass
@@ -157,7 +163,7 @@ void function DropshipConfig( entity soldier )
 
 void function OnClientConnected( entity player )
 {
-	hasSpawned[player] <- false	
+	hasSpawned[player] <- false
 	hasChanged[player] <- false
 	pRank[player] <- 0
 	shownClass[player] <- 0
@@ -168,8 +174,31 @@ void function OnClientConnected( entity player )
 	AddPlayerHeldButtonEventCallback( player, IN_USE, CallbackFuncCornerUs, 0.3 )
 	AddButtonPressedPlayerInputCallback( player, IN_USE, CallbackFuncSpotEnemy )
 	AddButtonPressedPlayerInputCallback( player, IN_WEAPON_CYCLE, SwitchClassesInput)
-	AddButtonPressedPlayerInputCallback( player, IN_FORWARD, SwitchClassesInput)
-	AddButtonPressedPlayerInputCallback( player, IN_RIGHT, SwitchClassesInput)
+	AddButtonPressedPlayerInputCallback( player, IN_OFFHAND0, SwitchClassesInput)
+	AddButtonPressedPlayerInputCallback( player, IN_OFFHAND1, SwitchClassesInputBack)
+	AddButtonPressedPlayerInputCallback( player, IN_MOVERIGHT, SwitchClassesInput)
+	AddButtonPressedPlayerInputCallback( player, IN_MOVELEFT, SwitchClassesInputBack)
+	AddButtonPressedPlayerInputCallback( player, IN_FORWARD, SwitchClassesInputBack)
+	AddButtonPressedPlayerInputCallback( player, IN_BACK, SwitchClassesInput)
+}
+
+void function SwitchClassesInputBack( entity player )
+{
+	thread SwitchClassesBack( player )
+}
+
+void function SwitchClassesBack( entity player )
+{
+	if (!IsAlive( player ))
+	{
+		shownClass[player] -= 1
+		if (shownClass[player] == -1)
+		{
+			shownClass[player] <- maxClasses
+		}
+		int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+		UpdateCycle( player, shownClass[player], selectedClass[player], score)
+	}
 }
 
 void function SwitchClassesInput( entity player ) //Allow user to switch classes
@@ -182,7 +211,7 @@ void function SwitchClasses( entity player )
 	if (!IsAlive( player ))
 	{
 		shownClass[player] += 1
-		if (shownClass[player] == 8)
+		if (shownClass[player] == maxClasses+1 )
 		{
 			shownClass[player] <- 0
 		}
@@ -205,13 +234,17 @@ void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //
 	if (!hasChanged[player])
 	{
 		thread sendCycleInfo( player )
-		hasChanged[player] = true
 	}
 	sendScoreInfo( player )
 }
 
 void function UpdateCycle( entity player, int shown, int selected, int score)
 {
+	sendClassMessage( player, shown)
+	if (!hasChanged[player])
+	{
+		hasChanged[player] = true
+	}
 	string title1 = ""
 	string title2 = ""
 	string title3 = ""
@@ -248,6 +281,10 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	{
 		selectedClass[player] = shownClass[player]
 	}
+	else
+	{
+		selectedClass[player] = 0
+	}
 	NSEditStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
 	NSEditStatusMessageOnPlayer(player,"",title2 + str2, "status2")
 	NSEditStatusMessageOnPlayer(player,"",title3 + str3, "status3")
@@ -256,6 +293,7 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 
 void function ShowCycle( entity player, int shown, int selected, int score)
 {
+	sendClassMessage( player, shown)
 	string title1 = ""
 	string title2 = ""
 	string title3 = ""
@@ -296,6 +334,47 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 
 }
 
+void function sendClassMessage( entity player, int classNum )
+{
+	string sentText = ""
+	switch( classNum )
+	{
+		case 0:
+			sentText = "Rifleman\nHealth: 30\nPrimary: R201, R101, Flatline, and Hemlok\nPossible Mods: HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			break
+		case 1:
+			sentText = "Communications\nHealth: 30\nPrimary: R97, CAR, Alternator\nPossible Mods: Holosight, HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			break
+		case 2:
+			sentText = "Support\nHealth: 30\nPrimary: EVA-8 Auto\nPossible Mods: Extended Magazine\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			break
+		case 3:
+			sentText = "Heavy\nHealth: 30\nPrimary: Spitfire, SMR\nPossible Mods: HCOG Ranger\nPistol: Wingman\nAnti-Titan: Archer\nOrdinance: Satchel\nAbilities: None"
+			break
+		case 4:
+			sentText = "Shield Captain\nHealth: 50\nPrimary: Spitfire\nPossible Mods: AOG\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: Personal Shield"
+			break
+		case 5:
+			sentText = "Specialist\nHealth: 40\nPrimary: Volt, Mastiff\nMods: None\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone"
+			break
+		case 6:
+			sentText = "Spectre\nHealth: 45\nPrimary: Volt\nPossible Mods: Holosight\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			break
+		case 7:
+			sentText = "Sniper Spectre\nHealth: 45\nPrimary: Kraber, DoubleTake\nMods: None\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			break
+		case 8:
+			sentText = "Pilot\nHealth: 200\nPrimary: R201\nMods: HCOG, TacKill, Amped (All Guaranteed)\nPistol: RE-45\nAnti-Titan: Thunderbolt (infinite ammo)\nOrdinance: 2 Frag Grenades (regenerating)\nAbilities: Regenerating Cloak, Double Jump, Wallrun"
+		default:
+			break
+	}
+	SendHudMessage(player, sentText,  0, -0.3, 255, 255, 255, 255, 0.15, 100, 0.3)
+}
+
+void function clearClassMessage( entity player )
+{
+	SendHudMessage(player, "",  -1, 0.3, 255, 255, 255, 255, 0.1, 0.1, 0.1)
+}
 void function ClearCycle( entity player )
 {
 	NSDeleteStatusMessageOnPlayer(player, "status1")
@@ -307,7 +386,7 @@ void function ClearCycle( entity player )
 function increaseShown( int shown)
 {
 	shown++
-	if (shown == 8)
+	if (shown == maxClasses+1)
 	{
 		shown = 0
 	}
@@ -329,10 +408,10 @@ function determineClass( int classNum )
 			returnClass = "Support"
 			break
 		case 3:
-			returnClass = "Heavy - 10 points"
+			returnClass = "Heavy - 5 points"
 			break
 		case 4:
-			returnClass = "Shield Captain - 25 points"
+			returnClass = "Shield Captain - 20 points"
 			break
 		case 5:
 			returnClass = "Specialist - 25 points"
@@ -343,6 +422,8 @@ function determineClass( int classNum )
 		case 7:
 			returnClass = "Sniper Spectre - 40 points"
 			break
+		case 8:
+			returnClass = "Pilot - 100 points"
 		default:
 			break
 	}
@@ -360,15 +441,17 @@ function determineClassScore( int classNum )
 		case 2:
 			return 0
 		case 3:
-			return 10
+			return 5
 		case 4:
-			return 25
+			return 20
 		case 5:
 			return 25
 		case 6:
 			return 30
 		case 7:
 			return 40
+		case 8:
+			return 100
 		default:
 			print("Invalid Classnumber, fatal error")
 			print(classNum)
@@ -480,12 +563,13 @@ void function DelayedRestoreBattleChatter( string uid, float delay )
 }
 
 void function OnPlayerRespawned( entity player )
-{	
+{
 
 
 	//if( GetZiplineDropshipSpawns().len() != 0 )
 	//	RespawnInDropShip( player )
 	//else
+	clearClassMessage( player )
 	TakeAllWeapons(player)
 	if (hasSpawned[player])
 	{
@@ -517,7 +601,7 @@ void function sendPingInfo( entity player )
 {
 	wait 16
 	print("Sending ping info")
-	NSSendInfoMessageToPlayer(player, "Hold interact to say a voiceline, or press interact to call out enemies")
+	NSSendInfoMessageToPlayer(player, "Hold 'interact' to say a voiceline, or press 'interact' to call out enemies")
 }
 
 void function sendScoreInfo( entity player )
@@ -530,7 +614,7 @@ void function sendCycleInfo( entity player )
 {
 	wait 1
 	print("Sending change info")
-	NSSendInfoMessageToPlayer(player, "Cycle weapons while in the deployment screen to switch classes")
+	NSSendInfoMessageToPlayer(player, "Use WASD or Controller Bumpers while in the deployment screen to switch classes")
 }
 void function StartKillerOutline( entity victim, entity attacker, var damageInfo )
 {
@@ -600,7 +684,7 @@ void function DelayedFriendlyKilledChatter( entity player )
 }
 
 void function OnPlayerChangeLoadout( entity player , PilotLoadoutDef p)
-{	
+{
 	BecomesGrunt_Loadout( player )
 }
 
@@ -609,43 +693,7 @@ void function BecomesGrunt_Loadout( entity player )
 	if( IsValid( player ) )
 	{
 		TakeAllWeapons( player )
-	 	///*string */secondary = player.GetMainWeapons()[1].GetWeaponClassName()
-		/*
-		grenade = player.GetOffhandWeapon(OFFHAND_ORDNANCE).GetWeaponClassName()
-
-		if (grenade == "mp_weapon_thermite_grenade" || grenade == "mp_weapon_grenade_gravity")
-		{
-			grenade = "mp_weapon_frag_grenade"
-		}
-		if(secondary == "mp_weapon_defender" || secondary == "mp_weapon_rocket_launcher" || secondary == "mp_weapon_arc_launcher" || secondary == "mp_weapon_mgl")
-		{
-			secondary = "mp_weapon_semipistol"
-		}
-		//player.SetPlayerSettings( "civilian_solo" )
-		//AddCinematicFlag( player, CE_FLAG_HIDE_MAIN_HUD )
-		//player.ForceStand()
-
-		TakeAllWeapons( player )
-		
-		//player.GiveWeapon( secondary )
-		player.GiveOffhandWeapon( "melee_pilot_emptyhanded", mp_weapon_frag_grenade, ["grunt_mode"] )
-
-		player.Signal( "ForceStopShield" )
-		
-		if( player.GetTeam() == TEAM_MILITIA )
-		{
-			player.SetModel($"models/humans/grunts/mlt_grunt_lmg.mdl")
-			player.SetMaxHealth( 100 )
-		}
-		if( player.GetTeam() == TEAM_IMC )
-		{
-			player.SetModel($"models/humans/grunts/imc_grunt_lmg.mdl")
-			player.SetMaxHealth( 100 )
-		}
-		*/
-
 		Highlight_SetFriendlyHighlight( player, "fw_friendly" )
-		player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, ["grunt_mode"] )
 		//player.kv.gravity = 1.4
 		//HideName( player )
 		player.SetNameVisibleToEnemy( false )
@@ -654,7 +702,7 @@ void function BecomesGrunt_Loadout( entity player )
 
 void function SetGruntSkin( entity player, string pMods, string pModel )
 {
-	if (pModel == "models/humans/pilots/pilot_light_ged_m.mdl") 
+	if (pModel == "models/humans/pilots/pilot_light_ged_m.mdl")
 	{
 		player.SetModel( $"models/humans/pilots/pilot_light_ged_m.mdl") //Workaround because one day it decided not to work normally for no given reason whatsoever
 	}
@@ -702,6 +750,10 @@ void function SetGruntSkin( entity player, string pMods, string pModel )
 	{
 		player.SetModel( $"models/humans/grunts/imc_grunt_lmg.mdl")
 	}
+	else if (pModel == "models/humans/pilots/pilot_light_core.mdl")
+	{
+		player.SetModel( $"models/humans/pilots/pilot_medium_geist_m.mdl")
+	}
 }
 
 void function RandomMods(entity player, string weapon, array<string> mods)
@@ -731,227 +783,176 @@ void function BecomesGrunt_Class( entity player, int classNum )
 {
 	if( IsValid(player) )
 	{
+		TakeAllWeapons( player )
+		string secondary = "mp_weapon_semipistol"
 		bool antiTitanTrue = false
 		string antiTitan = "mp_weapon_rocket_launcher"
 		string pMods = "Grunt"
 		string pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
-		if( player.GetTeam() == TEAM_MILITIA )
+		switch( classNum )
 		{
-			switch( classNum )
-			{
-				case 0: //Rifleman
-					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
-					SendHudMessage(player, "Respawning as Riflemen: Use your given rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
-					RandomMods(player,weapon,["hcog"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					antiTitanTrue = false
-					break
-				case 1: //SMG 
-					pModel = "models/humans/grunts/mlt_grunt_smg.mdl"
-					SendHudMessage(player, "Respawning as Communications: Use your SMG",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CSMG[ RandomInt( CSMG.len() ) ]
-					if (weapon != "mp_weapon_alternator_smg")
-					{
-						RandomMods(player,weapon,["holosight"])
-					}
-					else
-					{
-						RandomMods(player,weapon,["hcog"])
-					}
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 2: //Shotgun
-					pModel = "models/humans/grunts/mlt_grunt_shotgun.mdl"
-					SendHudMessage(player, "Respawning as Support: EVA-8 Shotgun",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 3: //Heavy
-					pModel = "models/humans/grunts/mlt_grunt_lmg.mdl"
-					SendHudMessage(player, "Respawning as Heavy: Use a Spitfire LMG or Sidewinder and an Archer",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
-					if (weapon != "mp_weapon_smr")
-					{
-						RandomMods(player,weapon,["redline_sight"])
-					}
-					else
-					{
-						player.GiveWeapon("mp_weapon_smr")
-					}
-					player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitan = "mp_weapon_rocket_launcher"
-					antiTitanTrue = true
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 4: //Captain
-					pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
-					SendHudMessage(player, "Respawning as Shield Captain: Use a Spitfire LMG with a moving Particle Shield",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_lmg",["aog"])
-					player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					thread ActivatePersonalShield( player )
-					player.SetHealth( 50 )
-					player.SetMaxHealth( 50 )
-					break
-				case 5: //Specialist
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
-					SendHudMessage(player, "Respawn as Specialist: Spawn 2 drones with special weapons and an MGL",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
-					player.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ])
-					antiTitanTrue = true
-					antiTitan = "mp_weapon_mgl"
-					player.SetHealth( 40 )
-					player.SetMaxHealth( 40 )
-					break
-				case 6: //Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
-					SendHudMessage(player, "Respawn as Spectre: Have extra health and Double Jump with a Volt, at reduced slide speed",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_hemlok_smg",["holosight"])
-					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 45 )
-					player.SetMaxHealth( 45 )
-					pMods = "Spectre"
-					break
-				case 7: //Sniper Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl" //Workaround for rodeo/dropship
-					SendHudMessage(player, "Respawn as Sniper Spectre: Spectre stats with a Kraber or Doubletake and a charge rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					player.GiveWeapon( CSNIPER[ RandomInt( CSNIPER.len() ) ] )
-					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = true
-					antiTitan = "mp_weapon_defender"
-					player.SetHealth( 45 )
-					player.SetMaxHealth( 45 )
-					pMods = "Spectre"
-					break
-				default:
-					break
-			}	
-		}
-
-		if( player.GetTeam() == TEAM_IMC )
-		{
-			switch( classNum )
-			{
-				case 0: //Rifleman
+			case 0: //Rifleman
+				if( player.GetTeam() == TEAM_IMC )
+				{
 					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
-					SendHudMessage(player, "Respawning as Riflemen: Use your given rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
-					RandomMods(player,weapon,["hcog"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					antiTitanTrue = false
-					break
-				case 1: //SMG 
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
+				}
+				SendHudMessage(player, "Spawning as Rifleman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
+				RandomMods(player,weapon,["hcog"])
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				player.SetHealth( 30 )
+				player.SetMaxHealth( 30 )
+				antiTitanTrue = false
+				break
+			case 1: //SMG
+				if( player.GetTeam() == TEAM_IMC )
+				{
 					pModel = "models/humans/grunts/imc_grunt_smg.mdl"
-					SendHudMessage(player, "Respawning as Communications: Use your SMG",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CSMG[ RandomInt( CSMG.len() ) ]
-					if (weapon != "mp_weapon_alternator_smg")
-					{
-						RandomMods(player,weapon,["holosight"])
-					}
-					else
-					{
-						RandomMods(player,weapon,["hcog"])
-					}
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 2: //Shotgun
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_smg.mdl"
+				}
+				SendHudMessage(player, "Spawning as Communications",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				string weapon = CSMG[ RandomInt( CSMG.len() ) ]
+				if (weapon != "mp_weapon_alternator_smg")
+				{
+					RandomMods(player,weapon,["holosight"])
+				}
+				else
+				{
+					RandomMods(player,weapon,["hcog"])
+				}
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = false
+				player.SetHealth( 30 )
+				player.SetMaxHealth( 30 )
+				break
+			case 2: //Shotgun
+				if( player.GetTeam() == TEAM_IMC )
+				{
 					pModel = "models/humans/grunts/imc_grunt_shotgun.mdl"
-					SendHudMessage(player, "Respawning as Support: EVA-8 Shotgun",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
-					player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 3: //Heavy
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_shotgun.mdl"
+				}
+				SendHudMessage(player, "Spawning as Support",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = false
+				player.SetHealth( 30 )
+				player.SetMaxHealth( 30 )
+				break
+			case 3: //Heavy
+				if( player.GetTeam() == TEAM_IMC )
+				{
 					pModel = "models/humans/grunts/imc_grunt_lmg.mdl"
-					SendHudMessage(player, "Respawning as Heavy: Use a Spitfire LMG or Sidewinder and an Archer",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
-					if (weapon != "mp_weapon_smr")
-					{
-						RandomMods(player,weapon,["redline_sight"])
-					}
-					else
-					{
-						player.GiveWeapon("mp_weapon_smr")
-					}
-					antiTitan = "mp_weapon_rocket_launcher"
-					player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = true
-					player.SetHealth( 30 )
-					player.SetMaxHealth( 30 )
-					break
-				case 4: //Captain
-					pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
-					SendHudMessage(player, "Respawning as Shield Captain: Use a Spitfire LMG with a moving Particle Shield",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_lmg",["aog"])
-					player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					thread ActivatePersonalShield( player )
-					player.SetHealth( 50 )
-					player.SetMaxHealth( 50 )
-					break
-				case 5: //Specialist
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
-					SendHudMessage(player, "Respawn as Specialist: Spawn 2 drones with special weapons and an MGL",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
-					player.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ])
-					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = true
-					antiTitan = "mp_weapon_mgl"
-					player.SetHealth( 40 )
-					player.SetMaxHealth( 40 )
-					break
-				case 6: //Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl" //Cannot currently use spectre model for rodeo/dropship, this is workaround
-					SendHudMessage(player, "Respawn as Spectre: Have extra health and Double Jump with a Volt, at reduced slide speed",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					RandomMods(player,"mp_weapon_hemlok_smg",["holosight"])
-					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = false
-					player.SetHealth( 45 )
-					player.SetMaxHealth( 45 )
-					pMods = "Spectre"
-					break
-				case 7: //Sniper Spectre
-					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
-					SendHudMessage(player, "Respawn as Sniper Spectre: Spectre stats with a Kraber or Doubletake and a charge rifle",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-					player.GiveWeapon( CSNIPER[ RandomInt( CSNIPER.len() ) ] )
-					player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
-					antiTitanTrue = true
-					antiTitan = "mp_weapon_defender"
-					player.SetHealth( 45 )
-					player.SetMaxHealth( 45 )
-					pMods = "Spectre"
-					break
-				default:
-					break
-			}
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_lmg.mdl"
+				}
+				SendHudMessage(player, "Spawning as Heavy",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
+				secondary = "mp_weapon_wingman"
+				if (weapon != "mp_weapon_smr")
+				{
+					RandomMods(player,weapon,["redline_sight"])
+				}
+				else
+				{
+					player.GiveWeapon("mp_weapon_smr")
+				}
+				player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitan = "mp_weapon_rocket_launcher"
+				antiTitanTrue = true
+				player.SetHealth( 30 )
+				player.SetMaxHealth( 30 )
+				break
+			case 4: //Captain
+				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
+				SendHudMessage(player, "Spawning as Shield Captain",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				RandomMods(player,"mp_weapon_lmg",["aog"])
+				secondary = "mp_weapon_wingman"
+				player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = false
+				thread ActivatePersonalShield( player )
+				player.SetHealth( 50 )
+				player.SetMaxHealth( 50 )
+				break
+			case 5: //Specialist
+				pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
+				SendHudMessage(player, "Spawning as Specialist",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				secondary = "mp_weapon_shotgun_pistol"
+				player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
+				player.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ])
+				antiTitanTrue = true
+				antiTitan = "mp_weapon_mgl"
+				player.SetHealth( 40 )
+				player.SetMaxHealth( 40 )
+				break
+			case 6: //Spectre
+				pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
+				SendHudMessage(player, "Spawning as Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				RandomMods(player,"mp_weapon_hemlok_smg",["holosight"])
+				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = false
+				player.SetHealth( 45 )
+				player.SetMaxHealth( 45 )
+				pMods = "Spectre"
+				break
+			case 7: //Sniper Spectre
+				pModel = "models/humans/pilots/pilot_light_ged_m.mdl" //Workaround for rodeo/dropship
+				SendHudMessage(player, "Spawning as Sniper Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				player.GiveWeapon( CSNIPER[ RandomInt( CSNIPER.len() ) ] )
+				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = true
+				antiTitan = "mp_weapon_defender"
+				player.SetHealth( 45 )
+				player.SetMaxHealth( 45 )
+				pMods = "Spectre"
+				break
+			case 8: //Pilot
+				pModel = "models/humans/pilots/pilot_light_core.mdl"
+				SendHudMessage(player, "Respawning as Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				player.GiveWeapon("mp_weapon_rspn101", ["hcog", "tactical_cdr_on_kill","burn_mod_rspn101"])
+				secondary = "mp_weapon_autopistol"
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE)
+				player.GiveOffhandWeapon( "mp_ability_cloak", OFFHAND_SPECIAL)
+				antiTitanTrue = true
+				antiTitan = "mp_weapon_arc_launcher"
+				player.SetMaxHealth( 200 )
+				player.SetHealth( 200 )
+				pMods = "Pilot"
+				break
+			default:
+				break
 		}
 		player.GiveWeapon( secondary )
 		if (antiTitanTrue == true)
 		{
-			player.GiveWeapon( antiTitan )
+			if (antiTitan == "mp_weapon_arc_launcher")
+			{
+				player.GiveWeapon( antiTitan, ["at_unlimited_ammo"] )
+			}
+			else
+			{
+				player.GiveWeapon( antiTitan )
+			}
 		}
 		if (pMods == "Spectre")
 		{
 			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "disable_wallrun", "spectre_speedmod"])
+		}
+		else if (pMods == "Pilot")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "enable_wallrun"])
 		}
 		else
 		{

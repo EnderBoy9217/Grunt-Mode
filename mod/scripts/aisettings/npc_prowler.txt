@@ -26,7 +26,7 @@ npc_prowler
 
 	melee_charge_set		prowler
 
-	Health					280
+	Health					500
 
 	painOnHeavyDamageThreshold	50
 	PainOnRepeatDamageThreshold	210

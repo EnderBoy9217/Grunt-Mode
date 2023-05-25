@@ -4,6 +4,7 @@ global function HullTraceDropPoint
 global function DebugTitanfall
 global function TitanFindDropNodes
 global function TitanHulldropSpawnpoint
+global function SetRecalculateTitanReplacementPointCallback
 
 // nessie modify
 global function CalculateTitanReplacementPoint
@@ -22,7 +23,13 @@ global const TITANDROP_FALLBACK_DIST = 150 // if the ground search hits, we go t
 struct
 {
 	int replacementSpawnpointsID
+	Point functionref(Point originalPoint, entity player) recalculateTitanReplacementPointCallback
 } file
+
+void function SetRecalculateTitanReplacementPointCallback(Point functionref(Point originalPoint, entity player) recalculateTitanReplacementPointCallback)
+{
+	file.recalculateTitanReplacementPointCallback = recalculateTitanReplacementPointCallback
+}
 
 void function ReplacementTitansDrop_Init()
 {
@@ -303,12 +310,12 @@ vector ornull function GetReplacementTrace( vector startPos, vector viewVector )
 	}
 
 	vector ornull clampedEndPos = NavMesh_ClampPointForHullWithExtents( endPos, HULL_TITAN, <160.0, 160.0, 80.0> )
-	
+
 	if ( !clampedEndPos )
 		return null
-	
+
 	expect vector( clampedEndPos )
-	
+
 	vector dir = clampedEndPos - startPos
 	if ( DotProduct2D( dir, viewVector ) < 0 )
 		return null

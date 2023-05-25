@@ -910,8 +910,7 @@ void function Highlight_SetSonarExecutionHighlightOrigin( entity ent, vector ori
 
 void function Highlight_SetDeathRecapHighlight( entity ent, string assetName )
 {
-	HighlightContext highlight = GetHighlight( assetName )
-	__SetEntityContextHighlight( ent, HIGHLIGHT_CONTEXT_DEATH_RECAP, highlight )
+	return
 }
 
 void function Highlight_ClearFriendlyHighlight( entity ent )

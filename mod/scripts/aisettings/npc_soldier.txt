@@ -49,12 +49,12 @@ npc_soldier
 	faceEnemyWhileMovingDist		600	[$mp]
 
 	Health					90		[$sp]
-	Health					50		[$mp]
+	Health					70		[$mp]
 
 	PainOnRepeatDamageThreshold	39	[$sp]
 
 	// changed for npc pilots
-	PainOnRepeatDamageThreshold	500	[$mp]
+	PainOnRepeatDamageThreshold	50	[$mp]
 	RepeatDamageTimeInterval		8
 
 	PainOnHeavyDamageThreshold		500	// more than health so never happens for base soldier but will happen for higher health ones
@@ -70,8 +70,8 @@ npc_soldier
 	aimassist_adspull_headshotRadius			8.0
 
 	// changed for npc pilots
-	MeleeDamageMax			100		[$mp]
-	MeleeDamageMin			100		[$mp]
+	MeleeDamageMax			40		[$mp]
+	MeleeDamageMin			20		[$mp]
 	MeleeDamageMax			53		[$sp]
 	MeleeDamageMin			53		[$sp]
 	MeleeDamageRadius		40		[$mp]

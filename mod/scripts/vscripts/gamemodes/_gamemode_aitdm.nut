@@ -102,6 +102,12 @@ void function OnPlayerConnected( entity player )
 
 //------------------------------------------------------
 
+void function SendScoreInfo( entity player )
+{
+	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	NSSendPopUpMessageToPlayer( player, "You have " + score + " points")
+}
+
 void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 {
 	if ( !( victim != attacker && GetGameState() == eGameState.Playing ) ) //add getowner to this since it crash my game everytime when am trying to deploy a npctitan without a owner
@@ -122,12 +128,15 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 
 	if( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Player Shield Captain
 		score = 6
-	
+
 	if( victim.GetModelName() == $"models/humans/pilots/pilot_light_ged_m.mdl" ) //Player Specialist
 		score = 6
-	
+
 	if ( victim.GetModelName() == $"models/robots/spectre/imc_spectre.mdl" ) //Player Spectre
 		score = 5
+
+	if ( victim.GetModelName() == $"models/humans/pilots/pilot_medium_geist_m.mdl") // Player Pilot
+		score = 10
 
 	if ( victim.GetClassName() == "npc_marvin" ) // I would make it negative but i dont wanna crash
 		score = 0
@@ -146,7 +155,7 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 
 	if ( victim.GetClassName() == "npc_soldier" ) // AI Grunt
 		score = 1
-	
+
 	if ( victim.GetClassName() == "npc_drone" ) // Plasma Drone
 		score = 0
 
@@ -164,6 +173,7 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 	{
 		attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
 		attacker.SetPlayerNetInt( "AT_bonusPoints", attacker.GetPlayerGameStat( PGS_ASSAULT_SCORE ) )
+		SendScoreInfo( attacker )
 	}
 }
 
@@ -366,7 +376,7 @@ void function SpawnerExtend( int team )
 					entity node = points[ GetSpawnPointIndex( points, team ) ]
 					//waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent )
 					AiGameModes_SpawnNPC( node.GetOrigin(), node.GetAngles(), team, ent )
-					
+
 				}
 			}
 
@@ -380,10 +390,10 @@ void function SpawnerExtend( int team )
 					entity node = points[ GetSpawnPointIndex( points, team ) ]
 					//waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent )
 					AiGameModes_SpawnNPC( node.GetOrigin(), node.GetAngles(), team, ent )
-					
+
 				}
 			}
-			
+
 			/*
 			// SPECIALIST
 			if ( file.specialists[ index ] )
@@ -395,7 +405,7 @@ void function SpawnerExtend( int team )
 					entity node = points[ GetSpawnPointIndex( points, team ) ]
 					//waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent )
 					AiGameModes_SpawnNPC( node.GetOrigin(), node.GetAngles(), team, ent )
-					
+
 				}
 			}
 			*/
@@ -411,7 +421,7 @@ void function SpawnerExtend( int team )
 					entity node = points[ GetSpawnPointIndex( points, team ) ]
 					//waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent )
 					AiGameModes_SpawnNPC( node.GetOrigin(), node.GetAngles(), team, ent )
-					
+
 				}
 			}
 			*/
@@ -483,7 +493,7 @@ void function Escalate( int team )
 			file.levels[ index ] = LEVEL_REAPERS
 			file.specialists[ index ] = true
 			return
-			
+
 		case LEVEL_REAPERS:
 			file.levels[ index ] = LEVEL_GUNSHIPS
 			file.reapers[ index ] = true
@@ -540,15 +550,15 @@ void function SquadHandler( array<entity> guys )
 	// Not all maps have assaultpoints / have weird assault points ( looking at you ac )
 	// So we use enemies with a large radius
 	array< entity > points = GetNPCArrayOfEnemies( guys[0].GetTeam() )
-	
+
 	if ( points.len()  == 0 )
 		return
-	
+
 	vector point
 	point = points[ RandomInt( points.len() ) ].GetOrigin()
-	
+
 	array<entity> players = GetPlayerArrayOfEnemies( guys[0].GetTeam() )
-	
+
 	// Setup AI
 	foreach ( guy in guys )
 	{
@@ -565,18 +575,18 @@ void function SquadHandler( array<entity> guys )
 			guy.SetMaxHealth( 200 ) //New Spectre health
 			guy.SetHealth( 200 )
 		}
-		
+
 		// show on enemy radar
 		foreach ( player in players )
 			guy.Minimap_AlwaysShow( 0, player )
-		
-		
+
+
 		//thread AITdm_CleanupBoredNPCThread( guy )
 	}
-	
+
 	// Every 5 - 15 secs change AssaultPoint
 	while ( true )
-	{	
+	{
 		foreach ( guy in guys )
 		{
 			// Check if alive
@@ -588,14 +598,14 @@ void function SquadHandler( array<entity> guys )
 			// Stop func if our squad has been killed off
 			if ( guys.len() == 0 )
 				return
-			
+
 			// Get point and send guy to it
 			points = GetNPCArrayOfEnemies( guy.GetTeam() )
 			if ( points.len() == 0 )
 				continue
-				
+
 			point = points[ RandomInt( points.len() ) ].GetOrigin()
-			
+
 			guy.AssaultPoint( point )
 		}
 		wait RandomFloatRange(5.0,15.0)
@@ -605,41 +615,41 @@ void function SquadHandler( array<entity> guys )
 void function TitanHandler( entity titan )
 {
 	array< entity > points = GetNPCArrayOfEnemies( titan.GetTeam() )
-	
+
 	if ( points.len()  == 0 )
 		return
-	
+
 	vector point
 	point = points[ RandomInt( points.len() ) ].GetOrigin()
-	
+
 	array<entity> players = GetPlayerArrayOfEnemies( titan.GetTeam() )
-	
+
 	// Setup AI
 	titan.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	titan.AssaultPoint( point )
 	titan.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
-	
+
 	// show on enemy radar
 	foreach ( player in players )
 		titan.Minimap_AlwaysShow( 0, player )
-	
-	
+
+
 	//thread AITdm_CleanupBoredNPCThread( guy )
-	
+
 	// Every 5 - 15 secs change AssaultPoint
 	while ( true )
-	{	
+	{
 		// Check if alive
 		if ( !IsAlive( titan ) )
 			return
-		
+
 		// Get point and send guy to it
 		points = GetNPCArrayOfEnemies( titan.GetTeam() )
 		if ( points.len() == 0 )
 			continue
-			
+
 		point = points[ RandomInt( points.len() ) ].GetOrigin()
-		
+
 		titan.AssaultPoint( point )
 		wait RandomFloatRange(5.0,15.0)
 	}
