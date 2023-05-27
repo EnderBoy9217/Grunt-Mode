@@ -1,7 +1,7 @@
 {
 	"Name" : "Grunt Mode",
 	"Description" : "You're now a grunt",
-	"Version": "2.1.2",
+	"Version": "2.1.1",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
 

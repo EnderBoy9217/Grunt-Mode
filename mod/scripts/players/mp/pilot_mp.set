@@ -114,6 +114,10 @@
 			{
 				doublejump "1"
 			}
+			enable_wallrun
+			{
+				wallrun			"1"
+			}
 			spectre_speedmod
 			{
 				slidevelocitydecay			2.0

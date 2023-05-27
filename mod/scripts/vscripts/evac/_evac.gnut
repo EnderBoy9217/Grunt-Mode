@@ -112,6 +112,19 @@ void function EvacEpilogueSetup()
 
 void function EvacEpilogue()
 {
+	foreach( entity player in GetPlayerArray() )
+	{
+		if ( player.GetModelName() == $"models/robots/spectre/imc_spectre.mdl" )
+		{
+			print("Resetting Spectre Model")
+			player.SetModel( $"models/humans/pilots/pilot_light_ged_m.mdl")
+		}
+		if ( player.GetModelName() == $"models/robots/marvin/marvin.mdl" )
+		{
+			print("Resetting Marvin Model")
+			player.SetModel( $"models/humans/pilots/pilot_light_ged_m.mdl")
+		}
+	}
 	int winner = GetWinningTeam()
 
 	// make sure we don't run evac if it won't be supported for current map/gamestate

@@ -33,6 +33,7 @@ global function SetReplacementTitanGamemodeRules
 global function SetRequestTitanGamemodeRules
 
 global function CreateTitanForPlayerAndHotdrop
+global function SetRequestTitanAllowedCallback
 
 struct {
 	array<int> ETATimeThresholds = [ 120, 60, 30, 15 ]
@@ -52,6 +53,8 @@ struct {
 
 	bool functionref( entity ) ReplacementTitanGamemodeRules
 	bool functionref( entity, vector ) RequestTitanGamemodeRules
+
+	bool functionref( entity player, array< string > args ) RequestTitanAllowedCallback
 
 } file
 
@@ -85,6 +88,11 @@ function ReplacementTitans_Init()
 		file.RequestTitanGamemodeRules = RequestTitanGamemodeRules_Default
 
 	FlagInit( "LevelHasRoof" )
+}
+
+void function SetRequestTitanAllowedCallback( bool functionref( entity player, array<string> args ) RequestTitanAllowedCallback )
+{
+	file.RequestTitanAllowedCallback = RequestTitanAllowedCallback
 }
 
 

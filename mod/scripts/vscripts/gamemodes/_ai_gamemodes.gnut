@@ -33,6 +33,13 @@ struct
 } file
 
 //------------------------------------------------------
+void function TitanDisableRodeo( entity titan )
+{
+	print("Disabling Rodeo")
+	entity titanSoul = titan.GetTitanSoul()
+	DisableTitanRodeo( titan )
+	titanSoul.SetRodeoAllowed( false )
+}
 
 void function AiGameModes_SetNPCWeapons( string npcClass, array<string> weapons )
 {
@@ -99,7 +106,7 @@ void function ProwlerPrecache()
 //------------------------------------------------------
 
 void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int count, void functionref( array<entity> guys ) squadHandler = null )
-{  
+{
 	string squadName = MakeSquadName( team, UniqueString( "" ) )
 
 	CallinData drop
@@ -110,19 +117,19 @@ void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int c
 	drop.squadname 	= squadName
 	SetDropTableSpawnFuncs( drop, CreateSoldier, count )
 	SetCallinStyle( drop, eDropStyle.ZIPLINE_NPC )
-  
+
 	thread RunDropshipDropoff( drop )
-	
+
 	WaitSignal( drop, "OnDropoff" )
-	
+
 	array< entity > guys = GetNPCArrayBySquad( squadName )
-	
+
 	foreach ( guy in guys )
 	{
 		SetUpNPCWeapons( guy )
 		guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	}
-	
+
 	if ( squadHandler != null )
 		thread squadHandler( guys )
 }
@@ -133,57 +140,45 @@ function rndint(max) { //100% not copy/pasted I swear
     return roll.tointeger();
 }
 
-void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string content /*( ͡° ͜ʖ ͡°)*/, void functionref( array<entity> guys ) squadHandler = null )
+void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string content, void functionref( array<entity> guys ) squadHandler = null, int flags = 0 )
 {
+	entity pod = CreateDropPod( pos, <0,0,0> )
+
+	InitFireteamDropPod( pod, flags )
+
+	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
+
 	string squadName = MakeSquadName( team, UniqueString( "" ) )
 	array<entity> guys
-	
-	entity pod = CreateDropPod( pos, <0,0,0> )
-	InitFireteamDropPod( pod )
-	if (rndint(2) == 1) //Grunt pod
-		for ( int i = 0; i < 4 ;i++ )
-		{
-			entity npc = CreateNPC( "npc_soldier", team, pos,<0,0,0> )
-			DispatchSpawn( npc )
-			SetSquad( npc, squadName )
-			SetUpNPCWeapons( npc )
-		
-			npc.SetParent( pod, "ATTACH", true )
-		
-			npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
-			guys.append( npc )
-		}
-	else //Spectre Pod
-		for ( int i = 0; i < 4 ;i++ )
-		{
-			entity npc = CreateNPC( "npc_spectre", team, pos,<0,0,0> )
-			DispatchSpawn( npc )
-			SetSquad( npc, squadName )
-			SetUpNPCWeapons( npc )
-		
-			npc.SetParent( pod, "ATTACH", true )
-		
-			npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
-			guys.append( npc )
-		}
-	
-	// The order here is different so we can show on minimap while were still falling
+	for ( int i = 0; i < 4 ;i++ )
+	{
+		entity npc = CreateNPC( content, team, pos,<0,0,0> )
+		DispatchSpawn( npc )
+		SetSquad( npc, squadName )
+
+		SetUpNPCWeapons( npc )
+
+		npc.SetParent( pod, "ATTACH", true )
+
+		npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		guys.append( npc )
+	}
+
+	ActivateFireteamDropPod( pod, guys )
+
+	// start searching for enemies
 	if ( squadHandler != null )
 		thread squadHandler( guys )
-		
-	waitthread LaunchAnimDropPod( pod, "pod_testpath", pos, rot )
-	
-	ActivateFireteamDropPod( pod, guys )
 }
 
 void function SetUpNPCWeapons( entity guy )
 {
 	string className = guy.GetClassName()
-	
+
 	array<string> mainWeapons
 	if ( className in file.npcWeaponsTable )
 		mainWeapons = file.npcWeaponsTable[ className ]
-	
+
 	if ( mainWeapons.len() == 0 ) // no valid weapons
 		return
 
@@ -210,13 +205,13 @@ void function AiGameModes_SpawnReaper( vector pos, vector rot, int team, string 
 	Highlight_SetEnemyHighlight( reaper, "enemy_titan" )
 	SetSpawnOption_Titanfall( reaper )
 	SetSpawnOption_Warpfall( reaper )
-	
+
 	if ( aiSettings != "" )
 		SetSpawnOption_AISettings( reaper, aiSettings )
-	
+
 	DispatchSpawn( reaper )
-	
-	
+
+
 	if ( reaperHandler != null )
 		thread reaperHandler( reaper )
 }
@@ -264,6 +259,11 @@ void function AiGameModes_SpawnTitan( vector pos, vector rot, int team, string s
 		SetSpawnOption_AISettings( titan, aiSettings )
 
 	DispatchSpawn( titan )
+
+	print("Disabling Rodeo")
+	entity titanSoul = titan.GetTitanSoul()
+	DisableTitanRodeo( titan )
+	titanSoul.SetRodeoAllowed( false )
 
 	if ( titanHandler != null )
 		thread titanHandler( titan )
@@ -320,13 +320,17 @@ entity function AiGameModes_SpawnTitanRandom( vector pos, vector rot, int team, 
     OverwriteLoadoutWithDefaultsForSetFile( titan.ai.titanSpawnLoadout )
 	DispatchSpawn( titan )
 	thread NPCTitanHotdrops( titan, true )
-	
+
+	print("Disabling Rodeo")
+	entity titanSoul = titan.GetTitanSoul()
+	DisableTitanRodeo( titan )
+	titanSoul.SetRodeoAllowed( false )
+
 	//titan.SetSkin(1)
 	//SetSquad( titan, squadName )
 
 	if ( titanHandler != null )
 		thread titanHandler( titan )
-
 	return titan
 }
 
@@ -428,7 +432,7 @@ void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot, int team 
 	pilot.EndSignal( "OnDeath" )
 	pilot.EndSignal( "OnDestroy" )
 
-	OnThreadEnd( 
+	OnThreadEnd(
 		function(): ( pilot, titan )
 		{
 			if( !IsAlive( titan ) )
@@ -444,16 +448,16 @@ void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot, int team 
 	NpcPilotSetPetTitan( pilot, titan )
 	titan.SetTitle( pilot.GetTitle() + "'s Titan" )
 	titan.WaitSignal( "TitanHotDropComplete" )
-	
+
 	thread NpcPilotRunsToEmbarkTitan( pilot, titan )
 	wait 2.0
-	
+
 	thread ForceStartTitan( titan, pilot )
 	waitthread NpcPilotRunsToEmbarkTitan( pilot, titan )
-	
+
 	thread NpcPilotEmbarksTitan( pilot, titan )
-	
-		
+
+
 	/*
 	while( true ) // keep making npc pilot run to embark till we success
 	{
@@ -591,7 +595,7 @@ void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot,entity tit
 
 	ReplaceWeapon( pilot, file.gruntWeapons[ RandomInt( file.gruntWeapons.len() ) ], [] )
 	//pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
-	
+
 	thread DropPodActiveThink( pod )
 
 	//pilot.WaitSignal( "npc_deployed" )
@@ -605,7 +609,7 @@ void function AiGameModes_SpawnPilotCanEmbark( vector pos, vector rot,entity tit
 	wait 5
 	//TeleportPilotToTitan( pilot, titan )
 	thread NpcPilotRunsToEmbarkTitan( pilot, titan )
-	
+
 	while(true)
 	{
 		wait 5
@@ -654,7 +658,7 @@ void function AiGameModes_SpawnPilotWithTitan( vector pos, vector rot, int team,
 		SetUpNPCWeapons( pilot )
 		pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	}
-	
+
 	ActivateFireteamDropPod( pod, pilots )
 
 	pilots[ pilots.len() - 1 ].WaitSignal( "npc_deployed" )
@@ -666,6 +670,10 @@ void function AiGameModes_SpawnPilotWithTitan( vector pos, vector rot, int team,
 	WaitFrame()
 	//thread NpcPilotCallsInAndEmbarksTitan(pilot, pilot.GetOrigin() + Vector(RandomFloatRange(-100,100),RandomFloatRange(-100,100),0), <0,0,0> )
 	entity titan = NpcPilotCallsInTitan(pilot, pilot.GetOrigin(), <0,0,0> )
+
+	print("Disabling Rodeo")
+	DisableTitanRodeo( titan )
+	titan.SetRodeoAllowed( false )
 
 	wait 5
 	if( IsValid( pilot ) && IsValid( titan ) )
@@ -685,6 +693,9 @@ function OnNpcPilotBecomesTitan( pilot, titan )
 
 void function DelayedTitanHandler( entity titan )
 {
+	print("Disabling Rodeo")
+	DisableTitanRodeo( titan )
+	titan.SetRodeoAllowed( false )
 	wait 1
 	if( IsAlive( titan ) )
 	{
@@ -701,7 +712,7 @@ function OnNpcTitanBecomesPilot( pilot, titan )
 	if( pilot.GetTeam()  == TEAM_MILITIA )
 	{
 		pilot.SetModel( $"models/humans/pilots/sp_medium_reaper_m.mdl" )
-		
+
 		pilot.SetTitle( "鉄馭" )
 		pilot.SetMaxHealth( 1000 )
 		pilot.SetHealth( 1000 )
@@ -732,41 +743,41 @@ void function DelayedPilotHandler( entity pilot )
 void function PilotHandler( entity pilot )
 {
 	array< entity > points = GetNPCArrayOfEnemies( pilot.GetTeam() )
-	
+
 	if ( points.len()  == 0 )
 		return
-	
+
 	vector point
 	point = points[ RandomInt( points.len() ) ].GetOrigin()
-	
+
 	array<entity> players = GetPlayerArrayOfEnemies( pilot.GetTeam() )
-	
+
 	// Setup AI
 	pilot.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	pilot.AssaultPoint( point )
 	pilot.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
-	
+
 	// show on enemy radar
 	foreach ( player in players )
 		pilot.Minimap_AlwaysShow( 0, player )
-	
-	
+
+
 	//thread AITdm_CleanupBoredNPCThread( guy )
-	
+
 	// Every 5 - 15 secs change AssaultPoint
 	while ( true )
-	{	
+	{
 		// Check if alive
 		if ( !IsAlive( pilot ) )
 			return
-		
+
 		// Get point and send guy to it
 		points = GetNPCArrayOfEnemies( pilot.GetTeam() )
 		if ( points.len() == 0 )
 			continue
-			
+
 		point = points[ RandomInt( points.len() ) ].GetOrigin()
-		
+
 		pilot.AssaultPoint( point )
 		wait RandomFloatRange(5.0,15.0)
 	}
@@ -776,41 +787,41 @@ void function PilotHandler( entity pilot )
 void function TitanHandler( entity titan )
 {
 	array< entity > points = GetNPCArrayOfEnemies( titan.GetTeam() )
-	
+
 	if ( points.len()  == 0 )
 		return
-	
+
 	vector point
 	point = points[ RandomInt( points.len() ) ].GetOrigin()
-	
+
 	array<entity> players = GetPlayerArrayOfEnemies( titan.GetTeam() )
-	
+
 	// Setup AI
 	titan.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 	titan.AssaultPoint( point )
 	titan.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
-	
+
 	// show on enemy radar
 	foreach ( player in players )
 		titan.Minimap_AlwaysShow( 0, player )
-	
-	
+
+
 	//thread AITdm_CleanupBoredNPCThread( guy )
-	
+
 	// Every 5 - 15 secs change AssaultPoint
 	while ( true )
-	{	
+	{
 		// Check if alive
 		if ( !IsAlive( titan ) )
 			return
-		
+
 		// Get point and send guy to it
 		points = GetNPCArrayOfEnemies( titan.GetTeam() )
 		if ( points.len() == 0 )
 			continue
-			
+
 		point = points[ RandomInt( points.len() ) ].GetOrigin()
-		
+
 		titan.AssaultPoint( point )
 		wait RandomFloatRange(5.0,15.0)
 	}
@@ -844,7 +855,7 @@ void function AiGameModes_SpawnDropPodToGetWeapons_Threaded( vector pos, vector 
     	HighlightDropPod( pod )
     	pod.SetModel( CAREPACKAGE_MODEL )
     }
-    
+
     wait lifeTime
     if( IsValid(pod) )
     {
