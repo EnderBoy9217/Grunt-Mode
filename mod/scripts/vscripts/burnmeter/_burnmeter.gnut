@@ -56,7 +56,7 @@ void function BurnMeter_Init()
 
 	BurnMeter_SetBoostRewardCount( "burnmeter_ticks", 2 )
 
-	BurnMeter_SetBoostLimit( "burnmeter_ticks", 6 )
+	BurnMeter_SetBoostLimit( "burnmeter_ticks", 0 )
 	BurnMeter_SetBoostLimit( "burnmeter_ap_turret_weapon", 3 )
 	BurnMeter_SetBoostLimit( "burnmeter_at_turret_weapon", 3 )
 	BurnMeter_SetBoostLimit( "burnmeter_holopilot_nova", 3 )
@@ -76,7 +76,7 @@ void function BurnMeter_SetBoostLimit( string burnRef, int limit )
 {
 	file.boostLimits[burnRef] <- limit
 }
-
+ 
 
 void function BurnMeter_SetBoostRewardCount( string burnRef, int rewardCount )
 {
@@ -87,11 +87,13 @@ int function BurnMeter_GetLimitedRewardCount( entity player, string burnRef = ""
 {
 	// added burnRef as a parameter, used for dice roll
 	// means we dont call two lots of BurnReward_GetRandom() whilst also being able to give multiple items per dice roll (ticks)
+	/*
 	if (burnRef == "")
 	{
 		EarnObject earnObject = PlayerEarnMeter_GetReward( player )
 		burnRef = earnObject.ref
 	}
+	*/
 
 	int limit = -1
 	int rewardCount = 1

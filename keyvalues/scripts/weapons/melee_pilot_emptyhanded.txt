@@ -148,7 +148,7 @@ WeaponData
 		}
 		grunt_mode
 		{
-			"melee_damage"		"40"
+			"melee_damage"		"60"
 		}
 		marvin_mode
 		{

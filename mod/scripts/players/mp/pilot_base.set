@@ -212,7 +212,18 @@
 			{
 				health 50
 			}
-
+			spectre_health
+			{
+				health 130
+			}
+			captain_health
+			{
+				health 150
+			}
+			specialist_health
+			{
+				health 125
+			}
 			triple_jump
 			{
 			}

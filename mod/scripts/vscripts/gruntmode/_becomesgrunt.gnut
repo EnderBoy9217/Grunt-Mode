@@ -24,7 +24,7 @@ array<string> CSNIPER = [ "mp_weapon_doubletake", "mp_weapon_sniper" ] //Also us
 
 // SETTINGS
 //--------------------------------------------------------------
-int maxClasses = 9 //Number of pickable classes
+int maxClasses = 10 //Number of pickable classes -1
 
 
 //-------------------------------------------------------------
@@ -340,34 +340,37 @@ void function sendClassMessage( entity player, int classNum )
 	switch( classNum )
 	{
 		case 0:
-			sentText = "Rifleman\nHealth: 30\nPrimary: R201, R101, Flatline, and Hemlok\nPossible Mods: HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			sentText = "Rifleman\nHealth: 100\nPrimary: R201, R101, Flatline, and Hemlok\nPossible Mods: HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
 			break
 		case 1:
-			sentText = "Communications\nHealth: 30\nPrimary: R97, CAR, Alternator\nPossible Mods: Holosight, HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			sentText = "Communications\nHealth: 100\nPrimary: R97, CAR, Alternator\nPossible Mods: Holosight, HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
 			break
 		case 2:
-			sentText = "Support\nHealth: 30\nPrimary: EVA-8 Auto\nPossible Mods: Extended Magazine\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			sentText = "Support\nHealth: 100\nPrimary: EVA-8 Auto\nPossible Mods: Extended Magazine\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
 			break
 		case 3:
-			sentText = "Heavy\nHealth: 30\nPrimary: Spitfire, SMR\nPossible Mods: HCOG Ranger\nPistol: Wingman\nAnti-Titan: Archer\nOrdinance: Satchel\nAbilities: None"
+			sentText = "Marksman\nHealth: 100\nPrimary: G2A5\nPossible Mods: HCOG Ranger\nPistol: P2016\nAnti-Titan: None\nOrdinace: Frag Grenade\nAbilities: None"
 			break
 		case 4:
-			sentText = "Marksman\nHealth: 30\nPrimary: G2A5\nPossible Mods: HCOG Ranger\nPistol: P2016\nAnti-Titan: None\nOrdinace: Frag Grenade\nAbilities: None"
+			sentText = "Heavy\nHealth: 100\nPrimary: Spitfire, SMR\nPossible Mods: HCOG Ranger\nPistol: Wingman\nAnti-Titan: Archer\nOrdinance: Satchel\nAbilities: None"
 			break
 		case 5:
-			sentText = "Shield Captain\nHealth: 50\nPrimary: Spitfire\nPossible Mods: AOG\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: Personal Shield"
+			sentText = "Shield Captain\nHealth: 150\nPrimary: Spitfire\nPossible Mods: AOG\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: Personal Shield"
 			break
 		case 6:
-			sentText = "Specialist\nHealth: 40\nPrimary: Volt, Mastiff\nMods: None\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone"
+			sentText = "Specialist\nHealth: 125\nPrimary: Volt, Mastiff\nMods: None\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone"
 			break
 		case 7:
-			sentText = "Spectre\nHealth: 45\nPrimary: Volt\nPossible Mods: Holosight\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			sentText = "Spectre\nHealth: 130\nPrimary: Volt\nPossible Mods: Holosight\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
 			break
 		case 8:
-			sentText = "Sniper Spectre\nHealth: 45\nPrimary: Kraber, DoubleTake\nMods: None\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			sentText = "Sniper Spectre\nHealth: 130\nPrimary: Kraber, DoubleTake\nMods: Amped Snipers\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
 			break
 		case 9:
-			sentText = "Pilot\nHealth: 200\nPrimary: R201\nMods: HCOG, TacKill, Amped (All Guaranteed)\nPistol: RE-45\nAnti-Titan: Thunderbolt (infinite ammo)\nOrdinance: 2 Frag Grenades (regenerating)\nAbilities: Regenerating Cloak, Double Jump, Wallrun, Advanced Melee"
+			sentText = "Sentry Technician\nHealth: 125\nPrimary: EM-4 Cold War\nRandom Mods: Speedloader, Extended Mag\nPistol: RE-45 Auto\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: 2 Deployable Sentry Turrets"
+			break
+		case 10:
+			sentText = "Pilot\nHealth: 150\nPrimary: R201\nMods: HCOG, TacKill, Amped (All Guaranteed)\nPistol: RE-45 Auto\nAnti-Titan: Thunderbolt (infinite ammo)\nOrdinance: 2 Frag Grenades (regenerating)\nAbilities: Regenerating Cloak, Double Jump, Wallrun, Advanced Melee"
 			break
 		default:
 			break
@@ -412,13 +415,13 @@ function determineClass( int classNum )
 			returnClass = "Support"
 			break
 		case 3:
-			returnClass = "Heavy - 5 points"
-			break
-		case 4:
 			returnClass = "Marksman - 5 points"
 			break
+		case 4:
+			returnClass = "Heavy - 10 points"
+			break
 		case 5:
-			returnClass = "Shield Captain - 15 points"
+			returnClass = "Shield Captain - 20 points"
 			break
 		case 6:
 			returnClass = "Specialist - 30 points"
@@ -430,7 +433,11 @@ function determineClass( int classNum )
 			returnClass = "Sniper Spectre - 40 points"
 			break
 		case 9:
+			returnClass = "Sentry Technician - 40 points"
+			break
+		case 10:
 			returnClass = "Pilot - 80 points"
+			break
 		default:
 			break
 	}
@@ -450,9 +457,9 @@ function determineClassScore( int classNum )
 		case 3:
 			return 5
 		case 4:
-			return 5
+			return 10
 		case 5:
-			return 15
+			return 20
 		case 6:
 			return 30
 		case 7:
@@ -460,6 +467,8 @@ function determineClassScore( int classNum )
 		case 8:
 			return 40
 		case 9:
+			return 40
+		case 10:
 			return 80
 		default:
 			print("Invalid Classnumber, fatal error")
@@ -486,15 +495,15 @@ void function CornerUsChatterThink( entity player )
 		return
 	if( !IsAlive( player ) )
 		return
-	string curChatter = "h"
+	string curChatter = ""
 	//print( "Setting Chatter Unusable" )
-	if (player.GetModelName == $"models/robots/spectre/imc_spectre.mdl" || player.GetModelName == $"models/humans/pilots/pilot_light_ged_m.mdl")
+	if (player.GetModelName != $"models/robots/spectre/imc_spectre.mdl" && player.GetModelName != $"models/humans/pilots/pilot_light_ged_m.mdl")
 	{
-		curChatter = SPECTRE_CHATTERS[ RandomInt( SPECTRE_CHATTERS.len() ) ]
+		curChatter = GRUNT_CHATTERS[ RandomInt( GRUNT_CHATTERS.len() ) ]
 	}
 	else
 	{
-		curChatter = GRUNT_CHATTERS[ RandomInt( GRUNT_CHATTERS.len() ) ]
+		curChatter = SPECTRE_CHATTERS[ RandomInt( SPECTRE_CHATTERS.len() ) ]
 	}
 
 	EmitSoundOnEntity( player, curChatter )
@@ -504,7 +513,10 @@ void function CornerUsChatterThink( entity player )
 
 void function CallbackFuncSpotEnemy( entity player )
 {
-	thread SpotEnemyChatterThink( player )
+	if (player.GetModelName != $"models/robots/spectre/imc_spectre.mdl" && player.GetModelName != $"models/humans/pilots/pilot_light_ged_m.mdl")
+	{
+		thread SpotEnemyChatterThink( player )
+	}
 }
 
 void function SpotEnemyChatterThink( entity player )
@@ -847,8 +859,6 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				}
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
-				player.SetHealth( 30 )
-				player.SetMaxHealth( 30 )
 				break
 			case 2: //Shotgun
 				if( player.GetTeam() == TEAM_IMC )
@@ -863,10 +873,22 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
-				player.SetHealth( 30 )
-				player.SetMaxHealth( 30 )
 				break
-			case 3: //Heavy
+			case 3: // Marksman
+				if( player.GetTeam() == TEAM_IMC )
+				{
+					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
+				}
+				RandomMods(player, "mp_weapon_g2", ["redline_sight"])
+				SendHudMessage(player, "Spawning as Marksman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = false
+				break
+			case 4: //Heavy
 				if( player.GetTeam() == TEAM_IMC )
 				{
 					pModel = "models/humans/grunts/imc_grunt_lmg.mdl"
@@ -889,24 +911,6 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitan = "mp_weapon_rocket_launcher"
 				antiTitanTrue = true
-				player.SetHealth( 30 )
-				player.SetMaxHealth( 30 )
-				break
-			case 4: // Marksman
-				if( player.GetTeam() == TEAM_IMC )
-				{
-					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
-				}
-				else
-				{
-					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
-				}
-				RandomMods(player, "mp_weapon_g2", ["redline_sight"])
-				SendHudMessage(player, "Spawning as Marksman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-				antiTitanTrue = false
-				player.SetHealth( 30 )
-				player.SetMaxHealth( 30 )
 				break
 			case 5: //Captain
 				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
@@ -916,8 +920,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				thread ActivatePersonalShield( player )
-				player.SetHealth( 50 )
-				player.SetMaxHealth( 50 )
+				pMods = "Captain"
 				break
 			case 6: //Specialist
 				pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
@@ -928,8 +931,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				player.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ])
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_mgl"
-				player.SetHealth( 40 )
-				player.SetMaxHealth( 40 )
+				pMods = "Specialist"
 				break
 			case 7: //Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
@@ -937,33 +939,80 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				RandomMods(player,"mp_weapon_hemlok_smg",["holosight"])
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
-				player.SetHealth( 45 )
-				player.SetMaxHealth( 45 )
 				pMods = "Spectre"
 				break
 			case 8: //Sniper Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
 				SendHudMessage(player, "Spawning as Sniper Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				player.GiveWeapon( CSNIPER[ RandomInt( CSNIPER.len() ) ] )
+				string weapon = CSNIPER[ RandomInt( CSNIPER.len() ) ]
+				if (weapon == "mp_weapon_doubletake" )
+				{
+					player.GiveWeapon( weapon, [ "burn_mod_doubletake" ] ) // DoubleTake
+				}
+				else if (weapon == "mp_weapon_sniper" )
+				{
+					player.GiveWeapon( weapon, ["burn_mod_sniper"] ) // Kraber
+				}
+				else
+				{
+					player.GiveWeapon( weapon )
+				}
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_defender"
-				player.SetHealth( 45 )
-				player.SetMaxHealth( 45 )
 				pMods = "Spectre"
 				break
-			case 9: //Pilot
+			case 9: //Sentry Tech
+				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
+				array<string> weaponMods = []
+				int random1 = RandomInt(2)
+				int random2 = RandomInt(2)
+				SendHudMessage(player, "Spawning as Sentry Technician",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				if (random1 == 1)
+				{
+					weaponMods = ["extended_ammo"]
+				}
+				if (random2 == 1)
+				{
+					if (random1 == 1)
+					{
+						weaponMods = ["extended_ammo", "pas_fast_reload"]
+					}
+					else
+					{
+						weaponMods = ["pas_fast_reload"]
+					}
+				}
+				if (weaponMods == [])
+				{
+					player.GiveWeapon( "mp_weapon_pulse_lmg" )
+				}
+				else
+				{
+					player.GiveWeapon( "mp_weapon_pulse_lmg", weaponMods )
+				}
+				secondary = "mp_weapon_autopistol"
+				player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				player.GiveOffhandWeapon( "mp_ability_turretweapon", OFFHAND_SPECIAL, ["sentry_tech_grunt_mode","burnmeter_ap_turret_weapon"] )
+				antiTitanTrue = false
+				pMods = "Tech"
+				break
+			/*
+			case 9: //Spectre Captain
+				pModel = "models/robots/spectre/imc_spectre.mdl"
+				SendHudMessage(player, "Spawning as Spectre Captain",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				RandomMods() //Devotion, extended mag, threat scope
+			*/
+			case 10: //Pilot
 				pModel = "models/humans/pilots/pilot_light_core.mdl"
 				SendHudMessage(player, "Respawning as Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				player.GiveWeapon("mp_weapon_rspn101", ["hcog", "tactical_cdr_on_kill","burn_mod_rspn101"])
+				player.GiveWeapon("mp_weapon_rspn101_og", ["hcog", "tactical_cdr_on_kill","burn_mod_rspn101"])
 				secondary = "mp_weapon_autopistol"
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE)
 				player.GiveOffhandWeapon( "mp_ability_cloak", OFFHAND_SPECIAL)
 				pilotMelee = true
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_arc_launcher"
-				player.SetMaxHealth( 200 )
-				player.SetHealth( 200 )
 				pMods = "Pilot"
 				break
 			default:
@@ -991,15 +1040,27 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		}
 		if (pMods == "Spectre")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "disable_wallrun", "spectre_speedmod"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "disable_wallrun", "spectre_speedmod","spectre_health","pas_stealth_movement"])
 		}
 		else if (pMods == "Pilot")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "enable_wallrun"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "enable_wallrun","captain_health"])
+		}
+		else if (pMods == "Captain")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement","captain_health"])
+		}
+		else if (pMods == "Specialist")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement","specialist_health"])
+		}
+		else if (pMods == "Tech")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement", "specialist_health"])
 		}
 		else
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement"])
 		}
 		SetGruntSkin( player, pMods, pModel)
 	}

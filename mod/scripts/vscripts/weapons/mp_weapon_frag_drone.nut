@@ -4,13 +4,37 @@ global function OnWeaponAttemptOffhandSwitch_weapon_frag_drone
 global function OnWeaponTossReleaseAnimEvent_weapon_frag_drone
 global function MpWeaponFragDrone_Init
 
+global table<entity, int> placedDrones
+
 void function MpWeaponFragDrone_Init()
 {
 	RegisterSignal( "OnFragDroneCollision" )
 
 	#if SERVER
 		AddDamageCallbackSourceID( eDamageSourceId.damagedef_frag_drone_throwable_PLAYER, FragDrone_OnDamagePlayerOrNPC )
+		AddCallback_OnClientConnected( placedDronesInit )
+		AddCallback_OnPlayerKilled( ResetDrones )
 	#endif
+}
+
+void function placedDronesInit( entity player )
+{
+	placedDrones[player] <- 0
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+	print("Created placedDrones for " + player)
+}
+
+void function ResetDrones( entity victim, entity attacker, var damageInfo )
+{
+	placedDrones[victim] <- 0
 }
 
 void function OnProjectileCollision_weapon_frag_drone( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
@@ -53,6 +77,8 @@ void function OnProjectileExplode_weapon_frag_drone( entity projectile )
 
 	if( projectile.ProjectileGetMods().contains( "drone_spawner" ) )
 		return TicksToDrones( projectile )
+	if( projectile.ProjectileGetMods().contains( "cloak_drone_spawner" ) )
+		return TicksToCloak( projectile )
 
 		vector origin = projectile.GetOrigin()
 		entity owner = projectile.GetThrower()
@@ -104,8 +130,6 @@ void function OnProjectileExplode_weapon_frag_drone( entity projectile )
 
 		thread FragDroneDeplyAnimation( drone, 0.0, 0.1 )
 		thread WaitForEnemyNotification( drone )
-		thread FragDroneLifetime( drone )
-
 	#endif
 }
 
@@ -117,6 +141,14 @@ void function FragDroneLifetime( entity drone )
 
 	EmitSoundOnEntity( drone, "weapon_sentryfragdrone_emit_loop" )
 	wait 15.0
+	drone.Signal( "SuicideSpectreExploding" )
+}
+
+void function FragKill( entity drone )
+{
+	drone.EndSignal( "OnDestroy" )
+	drone.EndSignal( "OnDeath" )
+
 	drone.Signal( "SuicideSpectreExploding" )
 }
 
@@ -195,7 +227,16 @@ bool function OnWeaponAttemptOffhandSwitch_weapon_frag_drone( entity weapon )
 #if SERVER
 void function TicksToDrones( entity tick )
 {
-	thread TicksToDronesThreaded( tick )
+	entity tickowner = tick.GetThrower()
+	if (placedDrones[ tickowner ] != 2)
+	{
+		thread TicksToDronesThreaded( tick )
+	}
+}
+
+void function TicksToCloak( entity tick )
+{
+	thread TicksToCloakThreaded( tick )
 }
 
 void function TicksToDronesThreaded( entity tick )
@@ -236,6 +277,37 @@ void function TicksToDronesThreaded( entity tick )
 	drone.TakeWeaponNow( classname )
 	drone.GiveWeapon( classname, ["npc_elite_weapon"] )
 	drone.SetActiveWeaponByName( classname )
+	NPCFollowsPlayer( drone, tickowner )
+
+	/*
+	int followBehavior = GetDefaultNPCFollowBehavior( drone )
+    drone.InitFollowBehavior( tickowner, followBehavior )
+    drone.EnableBehavior( "Follow" )
+    */
+   	placedDrones[tickowner] = placedDrones[tickowner] + 1
+	print("Player has " + placedDrones[tickowner] + " drones")
+}
+
+void function TicksToCloakThreaded( entity tick )
+{
+	entity tickowner = tick.GetThrower()
+	vector tickpos = tick.GetOrigin() + Vector(0,0,50)
+	vector tickang = tick.GetAngles()
+	int tickteam = tick.GetTeam()
+
+	string dronename = "npc_drone_cloaked"
+
+	entity drone = CreateNPC("npc_drone" , tickteam , tickpos, tickang )
+	SetSpawnOption_AISettings( drone, dronename )
+	DispatchSpawn( drone )
+
+	drone.SetOwner( tickowner )
+	drone.SetBossPlayer( tickowner )
+	drone.SetMaxHealth( 100 )
+	drone.SetHealth( 100 )
+	string weapon = "mp_weapon_deployable_cloakfield"
+	drone.GiveWeapon( weapon )
+	drone.SetActiveWeaponByName( weapon )
 	NPCFollowsPlayer( drone, tickowner )
 
 	/*

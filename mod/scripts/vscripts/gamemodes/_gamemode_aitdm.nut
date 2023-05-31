@@ -1,12 +1,13 @@
 untyped
+
 global function GamemodeAITdm_Init
 
-const SQUADS_PER_TEAM = 6
+const SQUADS_PER_TEAM = 5
 const REAPERS_PER_TEAM = 2
 
 const SPECIALISTS_PER_TEAM = 2
 const STALKERS_PER_TEAM = 4
-const MARVINS_PER_TEAM = 1
+const MARVINS_PER_TEAM = 0
 const PROWLERS_PER_TEAM = 4
 const PILOTS_PER_TEAM = 2
 
@@ -19,10 +20,19 @@ const LEVEL_SPECIAL = 75 //Specialist 75
 const LEVEL_REAPERS = 125
 const LEVEL_GUNSHIPS = 200
 const LEVEL_TITANS = 250
-bool nightMode = false
 
 const array<string> WEAPONS = [ "mp_weapon_alternator_smg", "mp_weapon_arc_launcher", "mp_weapon_autopistol", "mp_weapon_car", "mp_weapon_defender", "mp_weapon_dmr", "mp_weapon_doubletake", "mp_weapon_epg", "mp_weapon_esaw", "mp_weapon_g2", "mp_weapon_hemlok", "mp_weapon_hemlok_smg", "mp_weapon_lmg", "mp_weapon_lstar", "mp_weapon_mastiff", "mp_weapon_mgl", "mp_weapon_pulse_lmg", "mp_weapon_r97", "mp_weapon_rocket_launcher", "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_semipistol", "mp_weapon_shotgun", "mp_weapon_shotgun_pistol", "mp_weapon_smart_pistol", "mp_weapon_smr", "mp_weapon_sniper", "mp_weapon_softball", "mp_weapon_vinson", "mp_weapon_wingman", "mp_weapon_wingman_n" ]
 const array<string> MODS = [ "pas_run_and_gun", "threat_scope", "pas_fast_ads", "pas_fast_reload", "extended_ammo", "pas_fast_swap" ]
+
+struct HardpointStruct
+{
+	entity hardpoint
+	entity trigger
+	entity prop
+
+	array<entity> imcCappers
+	array<entity> militiaCappers
+}
 
 struct
 {
@@ -40,6 +50,9 @@ struct
 	array< bool > gunships = [ false, false ]
 	array< bool > pilots = [ false, false ]
 	array< bool > titans = [ false, false ]
+	bool ampingEnabled = true
+
+	array<HardpointStruct> hardpoints
 } file
 
 void function SetUpLethality()
@@ -49,13 +62,6 @@ void function SetUpLethality()
 	Assert( aiLethality < eAILethality.len() )
 	SetAILethality( aiLethality )
 }
-
-
-void function Night_Combat_Settings_Init()
-{
-	nightMode = true
-}
-
 
 void function GamemodeAITdm_Init()
 {
@@ -68,7 +74,6 @@ void function GamemodeAITdm_Init()
 	AddCallback_OnPlayerKilled( HandleScoreEvent )
 
 	AddCallback_OnClientConnected( OnPlayerConnected )
-	AddCallback_OnClientConnected( SetNightMode )
 
 	AddCallback_NPCLeeched( OnSpectreLeeched )
 
@@ -92,11 +97,7 @@ void function GamemodeAITdm_Init()
 	Riff_ForceBoostAvailability( eBoostAvailability.Disabled )
 	Riff_ForceTitanAvailability( eTitanAvailability.Never )
 	SetLoadoutGracePeriodEnabled( false )
-	//if (RandomInt(3) == 2)
-	//{
-	//	thread Night_Combat_Settings_Init()
-	//}
-	//thread SetUpLethality()
+	thread SetUpLethality()
 }
 
 //------------------------------------------------------
@@ -105,22 +106,6 @@ void function OnPrematchStart()
 {
 	thread StratonHornetDogfightsIntense()
 }
-
-
-void function SetNightMode( entity player )
-{
-	if (nightMode == true)
-	{
-		SetPlayerToNightSky( player )
-	}
-}
-
-void function SetPlayerToNightSky( entity player )
-{
-    player.SetSkyCamera( GetEnt( SKYBOXSPACE ) )
-    Remote_CallFunction_NonReplay( player, "ServerCallback_SetMapSettings", 1.0, false, 1.0, 1.0, 1.0, 0, 0, 0.0, 0.5 )
-}
-
 
 void function OnPlaying()
 {
@@ -191,7 +176,18 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 		score = 10
 
 	if ( victim.GetClassName() == "npc_soldier" ) // AI Grunt
-		score = 1
+		if ( victim.GetModelName() == $"models/humans/pilots/sp_medium_reaper_m.mdl" ) // Militia Pilot
+		{
+			score = 8
+		}
+		else if ( victim.GetModelName() == $"models/humans/pilots/sp_medium_stalker_m.mdl" ) // IMC Pilot
+		{
+			score = 8
+		}
+		else
+		{
+			score = 1
+		}
 
 	if ( victim.GetClassName() == "npc_drone" ) // Plasma Drone
 		score = 0
@@ -325,7 +321,7 @@ void function Spawner( int team )
 			if ( count < SQUADS_PER_TEAM * 4 - 2 )
 			{
 				string ent = file.podEntities[ index ][ RandomInt( file.podEntities[ index ].len() ) ]
-				/*
+
 				// Prefer dropship when spawning grunts
 				if ( ent == "npc_soldier" )
 				{
@@ -333,21 +329,25 @@ void function Spawner( int team )
 					if ( RandomInt( points.len() / 4 ) )
 					{
 						entity node = points[ GetSpawnPointIndex( points, team ) ]
-						waitthread AiGameModes_SpawnDropShip( node.GetOrigin(), node.GetAngles(), team, 4, SquadHandler )
+						waitthread Aitdm_SpawnDropShip( node, team )
 						continue
 					}
 				}
-				*/
+
 				array< entity > points = SpawnPoints_GetDropPod()
 				entity node = points[ GetSpawnPointIndex( points, team ) ]
 				print("Spawned Drop Pod in line 307 with " + count + " team NPCS")
 				waitthread AiGameModes_SpawnDropPod( node.GetOrigin(), node.GetAngles(), team, ent, SquadHandler )
 			}
 		}
-		else
-			break
 		WaitFrame()
 	}
+}
+
+void function Aitdm_SpawnDropShip( entity node, int team )
+{
+	thread AiGameModes_SpawnDropShip( node.GetOrigin(), node.GetAngles(), team, 4, SquadHandler )
+	wait 20
 }
 
 void function SpawnerExtend( int team )

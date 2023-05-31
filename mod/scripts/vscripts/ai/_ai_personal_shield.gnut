@@ -251,7 +251,7 @@ float function GetYawForEnemyOrLKP( entity owner )
 
 void function UpdateShieldPosition( entity mover, entity owner )
 {
-	mover.NonPhysicsMoveTo( owner.GetOrigin(), 0.1, 0.0, 0.0 )
+	mover.NonPhysicsMoveTo( owner.GetOrigin(), 0.01, 0.01, 0.0 )
 	vector angles = owner.EyeAngles()
 	float yaw = angles.y
 	yaw %= 360
