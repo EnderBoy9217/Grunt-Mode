@@ -1,4 +1,4 @@
-### Grunt Mode 2.3
+### Grunt Mode 2.5.3
 
 #### Gameplay:
 
@@ -39,8 +39,12 @@ Current Classes Include:
 
 **Spectre** - A class with increased health and double jump, in exchange for slide mobility and a large fee
 
+**Blase Spectre** - A class with a special grenade that kills anyone nearby instantly
+
 **Sniper Spectre** - A class with spectre attributes who can take down the enemy from afar
 
 **Sentry Technician** - A class that can deploy two automated sentrys to mow down the opposing team, also equipped with weapons effective against groups and titans
+
+**Spectre Leader** - A spectre class with a heavy arsenal and regenerating grenades
 
 **Pilot** - An expensive class we all know, pilots have increased mobility and firepower, along with a fully regenerating arsenal
