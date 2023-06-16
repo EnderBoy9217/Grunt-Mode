@@ -33,13 +33,6 @@ struct
 } file
 
 //------------------------------------------------------
-void function TitanDisableRodeo( entity titan )
-{
-	print("Disabling Rodeo")
-	entity titanSoul = titan.GetTitanSoul()
-	DisableTitanRodeo( titan )
-	titanSoul.SetRodeoAllowed( false )
-}
 
 void function AiGameModes_SetNPCWeapons( string npcClass, array<string> weapons )
 {
@@ -260,11 +253,6 @@ void function AiGameModes_SpawnTitan( vector pos, vector rot, int team, string s
 
 	DispatchSpawn( titan )
 
-	print("Disabling Rodeo")
-	entity titanSoul = titan.GetTitanSoul()
-	DisableTitanRodeo( titan )
-	titanSoul.SetRodeoAllowed( false )
-
 	if ( titanHandler != null )
 		thread titanHandler( titan )
 }
@@ -320,11 +308,6 @@ entity function AiGameModes_SpawnTitanRandom( vector pos, vector rot, int team, 
     OverwriteLoadoutWithDefaultsForSetFile( titan.ai.titanSpawnLoadout )
 	DispatchSpawn( titan )
 	thread NPCTitanHotdrops( titan, true )
-
-	print("Disabling Rodeo")
-	entity titanSoul = titan.GetTitanSoul()
-	DisableTitanRodeo( titan )
-	titanSoul.SetRodeoAllowed( false )
 
 	//titan.SetSkin(1)
 	//SetSquad( titan, squadName )
@@ -670,11 +653,6 @@ void function AiGameModes_SpawnPilotWithTitan( vector pos, vector rot, int team,
 	WaitFrame()
 	//thread NpcPilotCallsInAndEmbarksTitan(pilot, pilot.GetOrigin() + Vector(RandomFloatRange(-100,100),RandomFloatRange(-100,100),0), <0,0,0> )
 	entity titan = NpcPilotCallsInTitan(pilot, pilot.GetOrigin(), <0,0,0> )
-
-	print("Disabling Rodeo")
-	DisableTitanRodeo( titan )
-	titan.SetRodeoAllowed( false )
-
 	wait 5
 	if( IsValid( pilot ) && IsValid( titan ) )
 	{
@@ -693,9 +671,6 @@ function OnNpcPilotBecomesTitan( pilot, titan )
 
 void function DelayedTitanHandler( entity titan )
 {
-	print("Disabling Rodeo")
-	DisableTitanRodeo( titan )
-	titan.SetRodeoAllowed( false )
 	wait 1
 	if( IsAlive( titan ) )
 	{

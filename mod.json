@@ -1,7 +1,7 @@
 {
-	"Name" : "Grunt Mode",
-	"Description" : "You're now a grunt",
-	"Version": "2.3",
+	"Name" : "Ender's Grunt Mode",
+	"Description" : "You're now a grunt, now including a class system",
+	"Version": "2.5.4",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
 

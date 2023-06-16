@@ -87,7 +87,7 @@
 		{
 			pas_ads_hover
 			{
-				hoverEnabled				1
+				//hoverEnabled				1
 			}
 			pas_power_cell
 			{
@@ -105,22 +105,37 @@
 			{
 				doublejump		"0"
 			}
-
 			disable_wallrun
 			{
 				wallrun			"0"
 			}
 			enable_double
 			{
-				doublejump "1"
+				doublejump 		"1"
 			}
 			enable_wallrun
 			{
 				wallrun			"1"
 			}
+			pilot_speedmod
+			{
+				slideRequiredStartSpeed		200
+				slidevelocitydecay			0.7
+				slideSpeedBoost				150
+				gravityscale				1.0
+			}
 			spectre_speedmod
 			{
-				slidevelocitydecay			2.0
+				slidevelocitydecay			10.0
+			}
+			stalker_speedmod
+			{
+				slideRequiredStartSpeed		50000
+				slidevelocitydecay			100.0
+			}
+			stalker_healthregen
+			{
+				healthRegenStartDelay		10.0
 			}
 			r2_80
 			{
@@ -138,8 +153,6 @@
 			{
 				airSpeed					70
 				airAcceleration				250
-
-				
 			}
 		}
 	}

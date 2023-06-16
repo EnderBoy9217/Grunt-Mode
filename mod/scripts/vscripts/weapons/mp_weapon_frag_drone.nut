@@ -21,15 +21,16 @@ void function placedDronesInit( entity player )
 {
 	placedDrones[player] <- 0
 	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
-	print("Created placedDrones for " + player)
+}
+
+void function droneTimerResetWait( entity player )
+{
+	#if SERVER
+	wait 20
+	placedDrones[player] = placedDrones[player] - 1
+	NSSendInfoMessageToPlayer(player, "Your drone is ready to redeploy")
+	#endif
+	return
 }
 
 void function ResetDrones( entity victim, entity attacker, var damageInfo )
@@ -77,8 +78,6 @@ void function OnProjectileExplode_weapon_frag_drone( entity projectile )
 
 	if( projectile.ProjectileGetMods().contains( "drone_spawner" ) )
 		return TicksToDrones( projectile )
-	if( projectile.ProjectileGetMods().contains( "cloak_drone_spawner" ) )
-		return TicksToCloak( projectile )
 
 		vector origin = projectile.GetOrigin()
 		entity owner = projectile.GetThrower()
@@ -286,6 +285,10 @@ void function TicksToDronesThreaded( entity tick )
     */
    	placedDrones[tickowner] = placedDrones[tickowner] + 1
 	print("Player has " + placedDrones[tickowner] + " drones")
+	if ( placedDrones[tickowner] == 2)
+	{
+		thread droneTimerResetWait( tickowner )
+	}
 }
 
 void function TicksToCloakThreaded( entity tick )

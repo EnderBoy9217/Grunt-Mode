@@ -14,25 +14,15 @@ const PILOTS_PER_TEAM = 2
 const TITANS_PER_TEAM = 0
 const GUNSHIPS_PER_TEAM = 1
 
-const LEVEL_SPECTRES = 0
-const LEVEL_STALKERS = 150
-const LEVEL_SPECIAL = 75 //Specialist 75
-const LEVEL_REAPERS = 125
-const LEVEL_GUNSHIPS = 200
-const LEVEL_TITANS = 250
+const LEVEL_SPECTRES = 20
+const LEVEL_STALKERS = 75 //With prowlers
+const LEVEL_SPECIAL = 150
+const LEVEL_REAPERS = 250
+const LEVEL_GUNSHIPS = 300
+const LEVEL_TITANS = 500
 
 const array<string> WEAPONS = [ "mp_weapon_alternator_smg", "mp_weapon_arc_launcher", "mp_weapon_autopistol", "mp_weapon_car", "mp_weapon_defender", "mp_weapon_dmr", "mp_weapon_doubletake", "mp_weapon_epg", "mp_weapon_esaw", "mp_weapon_g2", "mp_weapon_hemlok", "mp_weapon_hemlok_smg", "mp_weapon_lmg", "mp_weapon_lstar", "mp_weapon_mastiff", "mp_weapon_mgl", "mp_weapon_pulse_lmg", "mp_weapon_r97", "mp_weapon_rocket_launcher", "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_semipistol", "mp_weapon_shotgun", "mp_weapon_shotgun_pistol", "mp_weapon_smart_pistol", "mp_weapon_smr", "mp_weapon_sniper", "mp_weapon_softball", "mp_weapon_vinson", "mp_weapon_wingman", "mp_weapon_wingman_n" ]
 const array<string> MODS = [ "pas_run_and_gun", "threat_scope", "pas_fast_ads", "pas_fast_reload", "extended_ammo", "pas_fast_swap" ]
-
-struct HardpointStruct
-{
-	entity hardpoint
-	entity trigger
-	entity prop
-
-	array<entity> imcCappers
-	array<entity> militiaCappers
-}
 
 struct
 {
@@ -50,9 +40,6 @@ struct
 	array< bool > gunships = [ false, false ]
 	array< bool > pilots = [ false, false ]
 	array< bool > titans = [ false, false ]
-	bool ampingEnabled = true
-
-	array<HardpointStruct> hardpoints
 } file
 
 void function SetUpLethality()
@@ -124,9 +111,16 @@ void function OnPlayerConnected( entity player )
 
 //------------------------------------------------------
 
+function calculateScore( entity player )
+{
+	int score1 = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) + givenScore[player]
+	int score2 = score1 - usedScore[player]
+	return score2
+}
+
 void function SendScoreInfo( entity player )
 {
-	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	int score = expect int(calculateScore( player ))
 	NSSendPopUpMessageToPlayer( player, "You have " + score + " points")
 }
 
@@ -174,6 +168,9 @@ void function HandleScoreEvent( entity victim, entity attacker, var damageInfo )
 
 	if ( victim.GetClassName() == "npc_super_spectre" ) //Reaper
 		score = 10
+
+	if ( victim.GetClassName() == "npc_dropship" ) // Grunt Dropship
+		score = 8
 
 	if ( victim.GetClassName() == "npc_soldier" ) // AI Grunt
 		if ( victim.GetModelName() == $"models/humans/pilots/sp_medium_reaper_m.mdl" ) // Militia Pilot
@@ -652,23 +649,8 @@ void function SquadHandler( array<entity> guys )
 	}
 }
 
-void function TitanDisableRodeo( entity titan )
-{
-	print("Disabling Rodeo")
-	entity titanSoul = titan.GetTitanSoul()
-	DisableTitanRodeo( titan )
-	titanSoul.SetRodeoAllowed( false )
-}
-
 void function TitanHandler( entity titan )
 {
-	TitanDisableRodeo( titan )
-	TitanDisableRodeo( titan )
-	TitanDisableRodeo( titan )
-	TitanDisableRodeo( titan )
-	TitanDisableRodeo( titan )
-	TitanDisableRodeo( titan )
-	//titanSoul.SetIsValidRodeoTarget( false )
 	array< entity > points = GetNPCArrayOfEnemies( titan.GetTeam() )
 
 	if ( points.len()  == 0 )
@@ -681,8 +663,7 @@ void function TitanHandler( entity titan )
 
 	// Setup AI
 	titan.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
-	titan.SetNumRodeoSlots(0)
-	DisableTitanRodeo( titan )
+	//titan.SetNumRodeoSlots(0) Better method used
 	titan.AssaultPoint( point )
 	titan.AssaultSetGoalRadius( 1600 ) // 1600 is minimum for npc_stalker, works fine for others
 

@@ -65,9 +65,20 @@ void function DeployableTurret_ClientConnected( entity player )
 	TurretAISettingsData playerTurretSettings
 	file.playerTurretAISettings[player] <- playerTurretSettings
 	player.p.turretArrayId = CreateScriptManagedEntArray()
+	print("Created placedTurrets for " + player)
 	placedTurrets[player] <- 0
 }
 #endif
+
+void function droneTimerResetWait( entity player )
+{
+	#if SERVER
+	wait 30
+	placedTurrets[player] = placedTurrets[player] - 1
+	thread NSSendInfoMessageToPlayer(player, "Your turret is ready to redeploy")
+	return
+	#endif
+}
 
 void function ResetTurrets( entity victim, entity attacker, var damageInfo )
 {
@@ -185,6 +196,10 @@ var function OnWeaponPrimaryAttack_turretweapon( entity weapon, WeaponPrimaryAtt
 		{
 			print("Player has " + turretCount + " active turrets")
 			placedTurrets[ownerPlayer] = placedTurrets[ownerPlayer] + 1
+			if ( placedTurrets[ownerPlayer] == 2)
+			{
+				thread droneTimerResetWait( ownerPlayer )
+			}
 			entity turret = DeployTurret( ownerPlayer, placementInfo.origin, placementInfo.angles, weapon, placementInfo )
 			turret.kv.AccuracyMultiplier = DEPLOYABLE_TURRET_ACCURACY_MULTIPLIER
 			DispatchSpawn( turret )

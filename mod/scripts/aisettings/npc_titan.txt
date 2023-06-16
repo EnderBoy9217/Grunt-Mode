@@ -121,7 +121,7 @@ npc_titan
 	allowSignals			1
 	allowPatrol				1
 	allowInvestigate		1
-	allowCrouchAnims		0
+	allowCrouchAnims		1
 
 	patrolRangeMin			1000
 	patrolRangeMax			2500

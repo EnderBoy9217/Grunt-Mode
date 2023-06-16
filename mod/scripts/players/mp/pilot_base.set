@@ -208,6 +208,23 @@
 				wallrun_hangTimeLimit	"21++"
 			}
 
+			stalker_slide
+			{
+				slidevelocitydecay			0.1
+				slide						0
+			}
+			spectre_slide
+			{
+				slidevelocitydecay			0.3
+			}
+			make_mechanical
+			{
+				mechanical					1
+			}
+			non_mechanical
+			{
+				mechanical					0
+			}
 			pas_pilot_hardcore_settings
 			{
 				health 50
@@ -228,6 +245,11 @@
 			{
 			}
 		}
+	}
+	"stalker_slidemod"
+	{
+		slidevelocitydecay			0.1
+		slide						0
 	}
 	"crouch"
 	{

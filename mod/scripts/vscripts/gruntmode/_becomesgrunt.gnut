@@ -24,7 +24,7 @@ array<string> CSNIPER = [ "mp_weapon_doubletake", "mp_weapon_sniper" ] //Also us
 
 // SETTINGS
 //--------------------------------------------------------------
-int maxClasses = 10 //Number of pickable classes -1
+int maxClasses = 12 //Number of pickable classes starting from 0 (Number of cases)
 
 
 //-------------------------------------------------------------
@@ -41,7 +41,12 @@ global table<entity, bool> hasChanged
 global table<entity, int> pRank
 global table<entity, int> shownClass
 global table<entity, int> selectedClass
+global table<entity, int> givenScore
 global table<entity, int> usedScore
+global table<entity, bool> deathDelay // True = Can use WASD inputs
+global table<entity, bool> spectreSpawn
+global table<entity, bool> specialistSpawn
+
 
 void function BecomesGruntMode_Init()
 {
@@ -72,7 +77,8 @@ void function PilotConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
+		soldier.SetNameVisibleToEnemy( false )
 	}
 }
 
@@ -82,7 +88,7 @@ void function MarvinConfig( entity soldier )
 	{
 		soldier.SetMaxHealth( 300 )
 		soldier.SetHealth( 300 )
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
 }
@@ -91,7 +97,7 @@ void function ProwlerConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
 }
@@ -102,7 +108,7 @@ void function SpectreConfig( entity soldier )
 	{
 		soldier.SetMaxHealth( 200 )
 		soldier.SetHealth( 200 )
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
 }
@@ -113,7 +119,7 @@ void function StalkerConfig( entity soldier )
 	{
 		soldier.SetMaxHealth( 250 )
 		soldier.SetHealth( 250 )
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
 }
@@ -122,7 +128,7 @@ void function ReaperConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
 	}
 }
 
@@ -130,7 +136,7 @@ void function TitanConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
 	}
 }
 
@@ -140,7 +146,7 @@ void function DroneConfig( entity soldier )
 	{
 		soldier.SetMaxHealth( 170 )
 		soldier.SetHealth( 170 )
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
 }
@@ -149,7 +155,7 @@ void function GunshipConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
 	}
 }
 
@@ -157,7 +163,7 @@ void function DropshipConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
 	}
 }
 
@@ -169,6 +175,10 @@ void function OnClientConnected( entity player )
 	shownClass[player] <- 0
 	selectedClass[player] <- 0
 	usedScore[player] <- 0
+	givenScore[player] <- 0
+	deathDelay[player] <- false
+	spectreSpawn[player] <- false
+	specialistSpawn[player] <- false
 
 	playerChatterTable[player.GetUID()] <- false
 	AddPlayerHeldButtonEventCallback( player, IN_USE, CallbackFuncCornerUs, 0.3 )
@@ -176,12 +186,34 @@ void function OnClientConnected( entity player )
 	AddButtonPressedPlayerInputCallback( player, IN_WEAPON_CYCLE, SwitchClassesInput)
 	AddButtonPressedPlayerInputCallback( player, IN_OFFHAND0, SwitchClassesInput)
 	AddButtonPressedPlayerInputCallback( player, IN_OFFHAND1, SwitchClassesInputBack)
-	AddButtonPressedPlayerInputCallback( player, IN_MOVERIGHT, SwitchClassesInput)
-	AddButtonPressedPlayerInputCallback( player, IN_MOVELEFT, SwitchClassesInputBack)
-	AddButtonPressedPlayerInputCallback( player, IN_FORWARD, SwitchClassesInputBack)
-	AddButtonPressedPlayerInputCallback( player, IN_BACK, SwitchClassesInput)
+	AddButtonPressedPlayerInputCallback( player, IN_MOVERIGHT, SwitchClassesInputDelayed)
+	AddButtonPressedPlayerInputCallback( player, IN_MOVELEFT, SwitchClassesInputBackDelayed)
+	AddButtonPressedPlayerInputCallback( player, IN_FORWARD, SwitchClassesInputBackDelayed)
+	AddButtonPressedPlayerInputCallback( player, IN_BACK, SwitchClassesInputDelayed)
 }
 
+function calculateScore( entity player )
+{
+	int score1 = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) + givenScore[player]
+	int score2 = score1 - usedScore[player]
+	return score2
+}
+
+void function SwitchClassesInputDelayed( entity player )
+{
+	if (deathDelay[player] == true)
+	{
+		thread SwitchClasses( player )
+	}
+}
+
+void function SwitchClassesInputBackDelayed( entity player )
+{
+	if (deathDelay[player] == true)
+	{
+		thread SwitchClassesBack( player )
+	}
+}
 void function SwitchClassesInputBack( entity player )
 {
 	thread SwitchClassesBack( player )
@@ -196,7 +228,7 @@ void function SwitchClassesBack( entity player )
 		{
 			shownClass[player] <- maxClasses
 		}
-		int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+		int score = expect int(calculateScore( player ))
 		UpdateCycle( player, shownClass[player], selectedClass[player], score)
 	}
 }
@@ -215,7 +247,7 @@ void function SwitchClasses( entity player )
 		{
 			shownClass[player] <- 0
 		}
-		int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+		int score = expect int(calculateScore( player ))
 		UpdateCycle( player, shownClass[player], selectedClass[player], score)
 	}
 }
@@ -224,7 +256,7 @@ void function SwitchClasses( entity player )
 void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //Happens on player killed
 {
 	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
-	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	int score = expect int(calculateScore( player ))
 	print("Player Score:")
 	print(score)
 	int selected = selectedClass[player]
@@ -240,6 +272,7 @@ void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //
 
 void function UpdateCycle( entity player, int shown, int selected, int score)
 {
+
 	sendClassMessage( player, shown)
 	if (!hasChanged[player])
 	{
@@ -250,32 +283,44 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	string title3 = ""
 	string title4 = ""
 	int classScore = 0
-	string str1 = expect string(determineClass( shown ))
+	string str1 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str1 != "[LOCKED - PLAY AS SPECIALIST]" && str1 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title1 = "[LOCKED] "
+		if (classScore > score )
+		{
+			title1 = "[LOCKED] "
+		}
 	}
 	shown = expect int(increaseShown( shown ))
-	string str2 = expect string(determineClass( shown ))
+	string str2 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str2 != "[LOCKED - PLAY AS SPECIALIST]" && str2 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title2 = "[LOCKED] "
+		if (classScore > score )
+		{
+			title2 = "[LOCKED] "
+		}
 	}
 	shown = expect int(increaseShown( shown ))
-	string str3 = expect string(determineClass( shown ))
+	string str3 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str3 != "[LOCKED - PLAY AS SPECIALIST]" && str3 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title3 = "[LOCKED] "
+		if (classScore > score)
+		{
+			title3 = "[LOCKED] "
+		}
 	}
 	shown = expect int(increaseShown( shown ))
-	string str4 = expect string(determineClass( shown ))
+	string str4 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str4 != "[LOCKED - PLAY AS SPECIALIST]" && str4 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title4 = "[LOCKED] "
+		if (classScore > score)
+		{
+			title4 = "[LOCKED] "
+		}
 	}
 	if (title1 == "")
 	{
@@ -284,6 +329,18 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	else
 	{
 		selectedClass[player] = 0
+	}
+	if ( spectreSpawn[player] == false )
+	{
+		if (selectedClass[player] == 9 || selectedClass[player] == 11)
+			selectedClass[player] = 7
+		if ( selectedClass[player] == 8)
+			selectedClass[player] = 0 // 15 points isnt enough for spectre
+	}
+	if ( specialistSpawn[player] == false)
+	{
+		if ( selectedClass[player] == 10 )
+			selectedClass[player] = 6
 	}
 	NSEditStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
 	NSEditStatusMessageOnPlayer(player,"",title2 + str2, "status2")
@@ -299,33 +356,46 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 	string title3 = ""
 	string title4 = ""
 	int classScore = 0
-	string str1 = expect string(determineClass( shown ))
+	string str1 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str1 == "[LOCKED - PLAY AS SPECIALIST]" || str1 == "[LOCKED - PLAY AS SPECTRE]")
+	{
+		selectedClass[ player ] = 0
+	}
+	else if (classScore > score)
 	{
 		title1 = "[LOCKED] "
 		selectedClass[ player ] = 0
 	}
 	shown = expect int(increaseShown( shown ))
-	string str2 = expect string(determineClass( shown ))
+	string str2 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str2 != "[LOCKED - PLAY AS SPECIALIST]" && str2 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title2 = "[LOCKED] "
+		if (classScore > score )
+		{
+			title2 = "[LOCKED] "
+		}
 	}
 	shown = expect int(increaseShown( shown ))
-	string str3 = expect string(determineClass( shown ))
+	string str3 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str3 != "[LOCKED - PLAY AS SPECIALIST]" && str3 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title3 = "[LOCKED] "
+		if (classScore > score)
+		{
+			title3 = "[LOCKED] "
+		}
 	}
 	shown = expect int(increaseShown( shown ))
-	string str4 = expect string(determineClass( shown ))
+	string str4 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (classScore > score)
+	if (str4 != "[LOCKED - PLAY AS SPECIALIST]" && str4 != "[LOCKED - PLAY AS SPECTRE]")
 	{
-		title4 = "[LOCKED] "
+		if (classScore > score)
+		{
+			title4 = "[LOCKED] "
+		}
 	}
 	NSCreateStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
 	NSCreateStatusMessageOnPlayer(player,"",title2 + str2, "status2")
@@ -358,21 +428,57 @@ void function sendClassMessage( entity player, int classNum )
 			sentText = "Shield Captain\nHealth: 150\nPrimary: Spitfire\nPossible Mods: AOG\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: Personal Shield"
 			break
 		case 6:
-			sentText = "Specialist\nHealth: 125\nPrimary: Volt, Mastiff\nMods: None\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone"
+			sentText = "Specialist\nHealth: 125\nPrimary: Volt, Mastiff\nMods: None\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone (Regenerating)"
 			break
 		case 7:
 			sentText = "Spectre\nHealth: 130\nPrimary: Volt\nPossible Mods: Holosight\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
 			break
 		case 8:
-			sentText = "Sniper Spectre\nHealth: 130\nPrimary: Kraber, DoubleTake\nMods: Amped Snipers\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			if ( spectreSpawn[player] == true)
+			{
+				sentText = "Blast Spectre\nHealth: 150\nPrimary: L-Star\nPossible Mods: Threat Scope\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Self Destruct, Double Jump, No Slide, Delayed Health Regeneration"
+			}
+			else
+			{
+				sentText = "[LOCKED - PLAY AS SPECTRE]"
+			}
 			break
 		case 9:
-			sentText = "Sentry Technician\nHealth: 125\nPrimary: EM-4 Cold War\nRandom Mods: Speedloader, Extended Mag\nPistol: RE-45 Auto\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: 2 Deployable Sentry Turrets"
+			if ( spectreSpawn[player] == true)
+			{
+				sentText = "Sniper Spectre\nHealth: 130\nPrimary: Kraber, DoubleTake\nMods: Amped Snipers\nPistol: P2016\nAnti-Titan: Charge Rifle\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			}
+			else
+			{
+				sentText = "[LOCKED - PLAY AS SPECTRE]"
+			}
 			break
 		case 10:
+			if ( specialistSpawn[player] == true)
+			{
+				sentText = "Sentry Technician\nHealth: 125\nPrimary: EM-4 Cold War\nRandom Mods: Speedloader, Extended Mag\nPistol: RE-45 Auto\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: 2 Deployable Sentry Turrets (Regenerating)"
+			}
+			else
+			{
+				sentText = "[LOCKED - PLAY AS SPECIALIST]"
+			}
+			break
+		case 11:
+			if ( spectreSpawn[player] == true)
+			{
+				sentText = "Spectre Leader\nHealth: 150\nPrimary: Devotion\nRandom Mods: Threat Scope, Extended Mag\nPistol: P2016\nAnti-Titan: Thunderbolt\nOrdinance: Arc Grenade (regenerating)\nAbilities: Double Jump, Reduced Slide"
+			}
+			else
+			{
+				sentText = "[LOCKED - PLAY AS SPECTRE]"
+			}
+			break
+		case 12:
 			sentText = "Pilot\nHealth: 150\nPrimary: R201\nMods: HCOG, TacKill, Amped (All Guaranteed)\nPistol: RE-45 Auto\nAnti-Titan: Thunderbolt (infinite ammo)\nOrdinance: 2 Frag Grenades (regenerating)\nAbilities: Regenerating Cloak, Double Jump, Wallrun, Advanced Melee"
 			break
 		default:
+			sentText = "[ERROR]"
+			print("Invalid Classnumber to return sentText, recieved " + string(classNum))
 			break
 	}
 	SendHudMessage(player, sentText,  0, -0.3, 255, 255, 255, 255, 0.15, 100, 0.3)
@@ -400,7 +506,7 @@ function increaseShown( int shown)
 	return shown
 }
 
-function determineClass( int classNum )
+function determineClass( int classNum, entity player )
 {
 	string returnClass = "Error"
 	switch( classNum )
@@ -430,15 +536,51 @@ function determineClass( int classNum )
 			returnClass = "Spectre - 30 points"
 			break
 		case 8:
-			returnClass = "Sniper Spectre - 40 points"
+			if ( spectreSpawn[player] == true)
+			{
+				returnClass = "Blast Spectre - 15 points"
+			}
+			else
+			{
+				returnClass = "[LOCKED - PLAY AS SPECTRE]"
+			}
 			break
 		case 9:
-			returnClass = "Sentry Technician - 40 points"
+			if ( spectreSpawn[player] == true)
+			{
+				returnClass = "Sniper Spectre - 40 points"
+			}
+			else
+			{
+				returnClass = "[LOCKED - PLAY AS SPECTRE]"
+			}
 			break
 		case 10:
+			if ( specialistSpawn[player] == true)
+			{
+				returnClass = "Sentry Technician - 40 points"
+			}
+			else
+			{
+				returnClass = "[LOCKED - PLAY AS SPECIALIST]"
+			}
+			break
+		case 11:
+			if ( spectreSpawn[player] == true)
+			{
+				returnClass = "Spectre Leader - 50 points"
+			}
+			else
+			{
+				returnClass = "[LOCKED - PLAY AS SPECTRE]"
+			}
+			break
+		case 12:
 			returnClass = "Pilot - 80 points"
 			break
 		default:
+			returnClass = "[ERROR]"
+			print("Invalid Classnumber to return Class, recieved " + string(classNum))
 			break
 	}
 	return returnClass
@@ -465,15 +607,18 @@ function determineClassScore( int classNum )
 		case 7:
 			return 30
 		case 8:
-			return 40
+			return 15
 		case 9:
 			return 40
 		case 10:
+			return 40
+		case 11:
+			return 50
+		case 12:
 			return 80
 		default:
-			print("Invalid Classnumber, fatal error")
-			print(classNum)
-			return null
+			print("Invalid Classnumber to return Score, recieved " + string(classNum))
+			return 50
 	}
 }
 
@@ -497,7 +642,7 @@ void function CornerUsChatterThink( entity player )
 		return
 	string curChatter = ""
 	//print( "Setting Chatter Unusable" )
-	if (player.GetModelName != $"models/robots/spectre/imc_spectre.mdl" && player.GetModelName != $"models/humans/pilots/pilot_light_ged_m.mdl")
+	if (player.GetModelName() != $"models/robots/spectre/imc_spectre.mdl" && player.GetModelName() != $"models/humans/pilots/pilot_light_ged_m.mdl")
 	{
 		curChatter = GRUNT_CHATTERS[ RandomInt( GRUNT_CHATTERS.len() ) ]
 	}
@@ -590,6 +735,7 @@ void function OnPlayerRespawned( entity player )
 	//if( GetZiplineDropshipSpawns().len() != 0 )
 	//	RespawnInDropShip( player )
 	//else
+	deathDelay[player] = false
 	clearClassMessage( player )
 	TakeAllWeapons(player)
 	if (hasSpawned[player])
@@ -627,7 +773,7 @@ void function sendPingInfo( entity player )
 
 void function sendScoreInfo( entity player )
 {
-	int score = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) - usedScore[player]
+	int score = expect int(calculateScore( player ))
 	NSSendPopUpMessageToPlayer( player, "You have " + score + " points to spend")
 }
 
@@ -647,6 +793,13 @@ void function OnGruntKilled( entity victim, entity attacker, var damageInfo )
 {
 	PlayEnemyKilledChatter( victim, attacker )
 	PlayFriendlyKilledChatter( victim, attacker )
+	thread startDelay( victim )
+}
+
+void function startDelay( entity victim )
+{
+	wait 0.5
+	deathDelay[victim] = true
 }
 
 void function PlayEnemyKilledChatter( entity victim, entity attacker )
@@ -834,8 +987,6 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
 				RandomMods(player,weapon,["hcog"])
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
-				player.SetHealth( 30 )
-				player.SetMaxHealth( 30 )
 				antiTitanTrue = false
 				break
 			case 1: //SMG
@@ -932,6 +1083,10 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_mgl"
 				pMods = "Specialist"
+				if ( specialistSpawn[player] == false )
+				{
+					specialistSpawn[player] = true
+				}
 				break
 			case 7: //Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
@@ -940,8 +1095,22 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				pMods = "Spectre"
+				if ( spectreSpawn[player] == false )
+				{
+					spectreSpawn[player] = true
+				}
 				break
-			case 8: //Sniper Spectre
+			case 8: //Blast Spectre
+				pModel = "models/robots/spectre/imc_spectre.mdl"
+				SendHudMessage(player, "Spawning as Blast Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				RandomMods(player,"mp_weapon_lstar",["threat_scope"])
+				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_SPECIAL, ["spectre_bomb"] )
+				secondary = "mp_weapon_wingman"
+				antiTitanTrue = false
+				pMods = "Stalker"
+				break
+			case 9: //Sniper Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
 				SendHudMessage(player, "Spawning as Sniper Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				string weapon = CSNIPER[ RandomInt( CSNIPER.len() ) ]
@@ -962,7 +1131,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				antiTitan = "mp_weapon_defender"
 				pMods = "Spectre"
 				break
-			case 9: //Sentry Tech
+			case 10: //Sentry Tech
 				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
 				array<string> weaponMods = []
 				int random1 = RandomInt(2)
@@ -997,13 +1166,43 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				antiTitanTrue = false
 				pMods = "Tech"
 				break
-			/*
-			case 9: //Spectre Captain
+
+			case 11: //Spectre Leader
 				pModel = "models/robots/spectre/imc_spectre.mdl"
-				SendHudMessage(player, "Spawning as Spectre Captain",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				RandomMods() //Devotion, extended mag, threat scope
-			*/
-			case 10: //Pilot
+				SendHudMessage(player, "Spawning as Spectre Leader",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				array<string> weaponMods = []
+				int random1 = RandomInt(2)
+				int random2 = RandomInt(2)
+				if (random1 == 1)
+				{
+					weaponMods = ["extended_ammo"]
+				}
+				if (random2 == 1)
+				{
+					if (random1 == 1)
+					{
+						weaponMods = ["extended_ammo", "threat_scope"]
+					}
+					else
+					{
+						weaponMods = ["threat_scope"]
+					}
+				}
+				if (weaponMods == [])
+				{
+					player.GiveWeapon( "mp_weapon_esaw" )
+				}
+				else
+				{
+					player.GiveWeapon( "mp_weapon_esaw", weaponMods )
+				}
+				secondary = "mp_weapon_wingman"
+				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE ) // Regenerating Grenade
+				antiTitanTrue = true
+				antiTitan = "mp_weapon_arc_launcher"
+				pMods = "Spectre Leader"
+				break
+			case 12: //Pilot
 				pModel = "models/humans/pilots/pilot_light_core.mdl"
 				SendHudMessage(player, "Respawning as Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				player.GiveWeapon("mp_weapon_rspn101_og", ["hcog", "tactical_cdr_on_kill","burn_mod_rspn101"])
@@ -1014,14 +1213,24 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_arc_launcher"
 				pMods = "Pilot"
+				string playerName = player.GetPlayerName()
+				print(playerName)
+				Chat_ServerBroadcast(playerName + " has become a pilot!",true)
 				break
 			default:
+				pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
+				SendHudMessage(player, "Invalid Class - Spawning as Rifleman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				print("Invalid Class Number: Recieved " + string(classNum))
+				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
+				RandomMods(player,weapon,["hcog"])
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = false
 				break
 		}
 		player.GiveWeapon( secondary )
 		if (antiTitanTrue == true)
 		{
-			if (antiTitan == "mp_weapon_arc_launcher")
+			if (antiTitan == "mp_weapon_arc_launcher" && pMods == "Pilot")
 			{
 				player.GiveWeapon( antiTitan, ["at_unlimited_ammo"] )
 			}
@@ -1040,27 +1249,35 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		}
 		if (pMods == "Spectre")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "disable_wallrun", "spectre_speedmod","spectre_health","pas_stealth_movement"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["make_mechanical", "enable_double", "disable_wallrun", "less_powerful_gilde", "spectre_speedmod","spectre_health","pas_stealth_movement", "spectre_slide"])
+		}
+		else if (pMods == "Spectre Leader")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["make_mechanical", "enable_double", "disable_wallrun", "less_powerful_gilde", "spectre_speedmod","captain_health","pas_stealth_movement", "spectre_slide"])
+		}
+		else if (pMods == "Stalker")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["make_mechanical", "enable_double", "stalker_healthregen", "disable_wallrun", "less_powerful_gilde", "stalker_speedmod","captain_health","pas_stealth_movement","stalker_slide"])
 		}
 		else if (pMods == "Pilot")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "enable_wallrun","captain_health"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["enable_double", "enable_wallrun","captain_health","pilot_speedmod"])
 		}
 		else if (pMods == "Captain")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement","captain_health"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["non_mechanical", "disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement","captain_health"])
 		}
 		else if (pMods == "Specialist")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement","specialist_health"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["make_mechanical", "disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement","specialist_health"])
 		}
 		else if (pMods == "Tech")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement", "specialist_health"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["non_mechanical", "disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement", "specialist_health"])
 		}
-		else
+		else //Normal Grunts
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["non_mechanical", "disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement"])
 		}
 		SetGruntSkin( player, pMods, pModel)
 	}
