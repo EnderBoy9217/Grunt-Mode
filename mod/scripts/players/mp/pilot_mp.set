@@ -7,8 +7,8 @@
 		subclass					"wallrun"
 
 		// changed for grunts
-		jumpheight					80 // 60
-		gravityscale				1.10
+		jumpheight					60 // 60
+		gravityscale				1.0
 
 		stepheight					18
 		ziplineSpeed				600
@@ -122,7 +122,7 @@
 				slideRequiredStartSpeed		200
 				slidevelocitydecay			0.7
 				slideSpeedBoost				150
-				gravityscale				1.0
+				gravityscale				0.8
 			}
 			spectre_speedmod
 			{

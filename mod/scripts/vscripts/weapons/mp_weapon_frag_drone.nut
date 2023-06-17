@@ -25,7 +25,7 @@ void function placedDronesInit( entity player )
 
 void function droneTimerResetWait( entity player )
 {
-	#if SERVER
+	#if SERVER && MP
 	wait 20
 	placedDrones[player] = placedDrones[player] - 1
 	NSSendInfoMessageToPlayer(player, "Your drone is ready to redeploy")

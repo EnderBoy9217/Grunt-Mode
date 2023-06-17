@@ -100,7 +100,8 @@ void function Grenade_OnWeaponTossPrep( entity weapon, WeaponTossPrepParams prep
     if ( weapon.HasMod( "spectre_bomb" ) )
     {
         StimPlayer(weaponOwner, 5.0)
-		givenScore[weaponOwner] = givenScore[weaponOwner] + 5
+		if ("givenScore" in getroottable())
+			givenScore[weaponOwner] = givenScore[weaponOwner] + 5
     }
 	#endif
 	weapon.EmitWeaponSound_1p3p( GetGrenadeDeploySound_1p( weapon ), GetGrenadeDeploySound_3p( weapon ) )
