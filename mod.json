@@ -1,10 +1,197 @@
 {
 	"Name" : "Ender's Grunt Mode",
 	"Description" : "You're now a grunt, now including a class system",
-	"Version": "2.5.4",
+	"Version": "2.9.0",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
-
+	"ConVars": [
+		{
+			"Name": "GRTDM_SQUADS",
+			"DefaultValue": "5",
+			"HelpString": "The number of Grunt/Spectre/Stalker squads that can be deployed at once, per-team (default 5)"
+		},
+		{
+			"Name": "GRTDM_REAPERS",
+			"DefaultValue": "2",
+			"HelpString": "The number of Reapers that can be deployed at once, per-team (default 2)"
+		},
+		{
+			"Name": "GRTDM_PROWLERS",
+			"DefaultValue": "3",
+			"HelpString": "The number of Prowlers that can be deployed at once, per-team (default 3)"
+		},
+		{
+			"Name": "GRTDM_PILOTS",
+			"DefaultValue": "2",
+			"HelpString": "The number of Titans with Pilots that can be deployed at once, per-team (default 2)"
+		},
+		{
+			"Name": "GRTDM_TITANS",
+			"DefaultValue": "0",
+			"HelpString": "The number of Titans without Pilots that can be deployed at once, per-team (default 0)"
+		},
+		{
+			"Name": "GRTDM_MRVNS",
+			"DefaultValue": "1",
+			"HelpString": "The number of Marvins that can be deployed at once, per-team (default 1)"
+		},
+		{
+			"Name": "GRTDM_GUNSHIPS",
+			"DefaultValue": "1",
+			"HelpString": "The number of Gunships that can be deployed at once, per-team (default 1)"
+		},
+		{
+			"Name": "GRLEVEL_SPECTRES",
+			"DefaultValue": "80",
+			"HelpString": "The score the opposing team must reach for spectre squads and marvins to start spawning (default 80)"
+		},
+		{
+			"Name": "GRLEVEL_STALKERS",
+			"DefaultValue": "150",
+			"HelpString": "The score the opposing team must reach for stalker squads and prowlers to start spawning, and marvins to stop spawning (default 150)"
+		},
+		{
+			"Name": "GRLEVEL_REAPERS",
+			"DefaultValue": "250",
+			"HelpString": "The score the opposing team must reach for Reapers to start spawning (default 250)"
+		},
+		{
+			"Name": "GRLEVEL_GUNSHIPS",
+			"DefaultValue": "300",
+			"HelpString": "The score the opposing team must reach for Gunships to start spawning (default 300)"
+		},
+		{
+			"Name": "GRLEVEL_TITANS",
+			"DefaultValue": "500",
+			"HelpString": "The score the opposing team must reach for Titans and Pilots to start spawning, and Prowlers to stop spawning (default 500)"
+		},
+		{
+			"Name": "CLASS_SNIPER_UNLOCK",
+			"DefaultValue": "40",
+			"HelpString": "The score you need to get as a Marksman to unlock the Sniper Class (default 30)"
+		},
+		{
+			"Name": "CLASS_SPECTRE_UNLOCK",
+			"DefaultValue": "50",
+			"HelpString": "The score you need to get as a grunt to unlock the Spectre class (default 50)"
+		},
+		{
+			"Name": "CLASS_SNIPESPECTRE_UNLOCK",
+			"DefaultValue": "30",
+			"HelpString": "The score you need to get as a Spectre to unlock the Sniper Spectre class (default 30)"
+		},
+		{
+			"Name": "CLASS_SPECTRELEADER_UNLOCK",
+			"DefaultValue": "60",
+			"HelpString": "The score you need to get as a Spectre Class to unlock the Spectre Leader class (default 60)"
+		},
+		{
+			"Name": "CLASS_BLASTSPECTRE_UNLOCK",
+			"DefaultValue": "20",
+			"HelpString": "The score you need to get as a Spectre Leader Class to unlock the Blast Spectre class (default 20)"
+		},
+		{
+			"Name": "CLASS_PILOT_UNLOCK",
+			"DefaultValue": "100",
+			"HelpString": "The score you need to get as a grunt to unlock the Pilot class (default 100)"
+		},
+		{
+			"Name": "CLASS_SENTRY_UNLOCK",
+			"DefaultValue": "5",
+			"HelpString": "The drones you need to spawn to unlock the Sentry class (default 5)"
+		},
+		{
+			"Name": "CLASS_OPPILOT_UNLOCK_STREAK",
+			"DefaultValue": "10",
+			"HelpString": "The killsteak you need to unlock the OP Pilot class (default 10)"
+		},
+		{
+			"Name": "CLASS_OPPILOT_UNLOCK_TYPE",
+			"DefaultValue": "grunt",
+			"HelpString": "The classes you can use to unlock OP Pilot [Accepted values are 'any', 'free', 'grunt', or 'rifleman', otherwise it will set to default] (default 'grunt')"
+		},
+		{
+			"Name": "COST_MARKSMAN",
+			"DefaultValue": "5",
+			"HelpString": "Cost to spawn as Marksman (default 5)"
+		},
+		{
+			"Name": "COST_SNIPER",
+			"DefaultValue": "10",
+			"HelpString": "Cost to spawn as Sniper (default 10)"
+		},
+		{
+			"Name": "COST_HEAVY",
+			"DefaultValue": "10",
+			"HelpString": "Cost to spawn as Heavy (default 10)"
+		},
+		{
+			"Name": "COST_SHIELD_CAPTAIN",
+			"DefaultValue": "20",
+			"HelpString": "Cost to spawn as Shield Captain (default 20)"
+		},
+		{
+			"Name": "COST_SPECIALIST",
+			"DefaultValue": "30",
+			"HelpString": "Cost to spawn as Specialist (default 30)"
+		},
+		{
+			"Name": "COST_SPECTRE",
+			"DefaultValue": "20",
+			"HelpString": "Cost to spawn as Spectre (default 20)"
+		},
+		{
+			"Name": "COST_BLAST_SPECTRE",
+			"DefaultValue": "25",
+			"HelpString": "Cost to spawn as Blast Spectre (default 25)"
+		},
+		{
+			"Name": "COST_SNIPESPECTRE",
+			"DefaultValue": "25",
+			"HelpString": "Cost to spawn as Sniper Spectre (default 25)"
+		},
+		{
+			"Name": "COST_SENTRY",
+			"DefaultValue": "40",
+			"HelpString": "Cost to spawn as Sentry Technician (default 40)"
+		},
+		{
+			"Name": "COST_SPECTRE_LEADER",
+			"DefaultValue": "35",
+			"HelpString": "Cost to spawn as Spectre Leader (default 35)"
+		},
+		{
+			"Name": "COST_PILOT",
+			"DefaultValue": "80",
+			"HelpString": "Cost to spawn as Pilot (default 80)"
+		},
+		{
+			"Name": "COST_OPPILOT",
+			"DefaultValue": "140",
+			"HelpString": "Cost to spawn as OP Pilot (default 140)"
+		},
+		{
+			"Name": "GR_OPTICS_LEVEL",
+			"DefaultValue": "15",
+			"HelpString": "The score you need to get as a class to unlock optics for that class (default 15)"
+		},
+		{
+			"Name": "GR_ATTACHMENT_LEVEL",
+			"DefaultValue": "30",
+			"HelpString": "The score you need to get as a class to unlock an attachment for that class (default 30)"
+		},
+		{
+			"Name": "GR_ATTACHMENT_LEVEL_MULTIPLE",
+			"DefaultValue": "20",
+			"HelpString": "The score you need to get as a class to unlock your first attachment for that class (default 20)"
+		},
+		{
+			"Name": "GR_ATTACHMENT_LEVEL_MULTIPLE_2",
+			"DefaultValue": "40",
+			"HelpString": "The score you need to get as a class to unlock your second attachment for that class (default 40)"
+		}
+		
+	],
 	"Scripts": [
 		{
 			"Path": "/gruntmode/_droppod_spawn_1player.gnut",

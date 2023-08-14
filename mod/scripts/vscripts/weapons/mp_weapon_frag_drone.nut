@@ -230,6 +230,9 @@ void function TicksToDrones( entity tick )
 	if (placedDrones[ tickowner ] != 2)
 	{
 		thread TicksToDronesThreaded( tick )
+		specialistDrones[ tickowner ] += 1
+		if (specialistDrones[tickowner] == 5)
+			NSSendAnnouncementMessageToPlayer( tickowner, "Unlocked Sentry Tech Class", "Spawned 5 Drones as a Specialist", <1,1,0>, 1, 1 )
 	}
 }
 

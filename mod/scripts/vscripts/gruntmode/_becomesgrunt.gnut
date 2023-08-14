@@ -1,10 +1,5 @@
 untyped
 
-//To-do List
-//Set spectre to specialist model on rodeo/dropship or prevent it
-//Rebalance spawn?
-//add stalker + reaper???
-
 global function BecomesGruntMode_Init
 
 table< string, bool > playerChatterTable
@@ -16,24 +11,18 @@ array<string> SPECTRE_CHATTERS = [ "diag_spectre_gs_leechstart_01_1", "diag_spec
 //"diag_sp_intro_WD104_24_01_mcor_grunt1" They're trying to corner us!
 
 //Randomized loadouts minus anti-titan weapons, which are seperate
-array<string> CRIFLE = [ "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_vinson", "mp_weapon_hemlok" ]
-array<string> CHEAVY = [ "mp_weapon_lmg", "mp_weapon_smr" ] //Also uses archer but excluded
-array<string> CSMG = ["mp_weapon_r97", "mp_weapon_alternator_smg", "mp_weapon_car"] //Original was just R97, but the others were added because MP grunts have them
-array<string> CSPECIAL = [ "mp_weapon_hemlok_smg", "mp_weapon_mastiff" ] //Also uses mag launcher but excluded
-array<string> CSNIPER = [ "mp_weapon_doubletake", "mp_weapon_sniper" ] //Also uses charge rifle but excluded
+global array<string> CRIFLE = [ "mp_weapon_rspn101", "mp_weapon_rspn101_og", "mp_weapon_vinson", "mp_weapon_hemlok" ]
+global array<string> CHEAVY = [ "mp_weapon_lmg", "mp_weapon_smr" ] //Also uses archer but excluded
+global array<string> CSMG = ["mp_weapon_r97", "mp_weapon_alternator_smg", "mp_weapon_car"] //Original was just R97, but the others were added because MP grunts have them
+global array<string> CSPECIAL = [ "mp_weapon_hemlok_smg", "mp_weapon_mastiff" ] //Also uses mag launcher but excluded
+global array<string> CSNIPER = [ "mp_weapon_doubletake", "mp_weapon_sniper" ] //Also uses charge rifle but excluded
 
 // SETTINGS
 //--------------------------------------------------------------
-int maxClasses = 12 //Number of pickable classes starting from 0 (Number of cases)
+int maxClasses = 14 //Number of pickable classes starting from 0 (Number of cases)
 
 
 //-------------------------------------------------------------
-
-
-//placeholders to make gloabls
-int forceChange = 0
-int rankUpG = 0
-int score = 0
 
 //Player tables
 global table<entity, bool> hasSpawned
@@ -43,9 +32,29 @@ global table<entity, int> shownClass
 global table<entity, int> selectedClass
 global table<entity, int> givenScore
 global table<entity, int> usedScore
+global table<entity, int> currentClass //Currrent in-game class (by integer)
+global table<entity, int> markScore //marksman kills for unlocking new classes
 global table<entity, bool> deathDelay // True = Can use WASD inputs
-global table<entity, bool> spectreSpawn
-global table<entity, bool> specialistSpawn
+global table<entity, int> specialistDrones
+global table<entity, int> gruntScore
+global table<entity, int> rifleStreak
+
+global table<entity, int> classscore0
+global table<entity, int> classscore1
+global table<entity, int> classscore2
+global table<entity, int> classscore3
+global table<entity, int> classscore4
+global table<entity, int> classscore5
+global table<entity, int> classscore6
+global table<entity, int> classscore7
+global table<entity, int> classscore8
+global table<entity, int> classscore9
+global table<entity, int> classscore10
+global table<entity, int> classscore11
+global table<entity, int> classscore12
+
+global table<entity, PilotLoadoutDef> playerLoadout
+int score = 0
 
 
 void function BecomesGruntMode_Init()
@@ -73,12 +82,24 @@ void function BecomesGruntMode_Init()
 
 //-----------------------------------------------
 
-void function PilotConfig( entity soldier )
+void function PilotConfig( entity soldier ) // All AI soldiers
 {
 	if( IsValid( soldier ) )
 	{
+		soldier.SetMaxHealth( 100 )
+		soldier.SetHealth( 100 )
 		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
+	}
+	if ( soldier.GetModelName() == $"models/humans/pilots/sp_medium_reaper_m.mdl" ) // MIL Pilot
+	{
+		soldier.SetMaxHealth( 300 )
+		soldier.SetHealth( 300 )
+	}
+	if ( soldier.GetModelName() == $"models/humans/pilots/sp_medium_stalker_m.mdl" ) // IMC Pilot
+	{
+		soldier.SetMaxHealth( 300 )
+		soldier.SetHealth( 300 )
 	}
 }
 
@@ -128,7 +149,7 @@ void function ReaperConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
+		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
 	}
 }
 
@@ -136,7 +157,7 @@ void function TitanConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
+		Highlight_SetFriendlyHighlight( soldier, "fw_friendly" )
 	}
 }
 
@@ -155,7 +176,7 @@ void function GunshipConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
+		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 	}
 }
 
@@ -163,10 +184,28 @@ void function DropshipConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		Highlight_SetFriendlyHighlight( soldier, "friendly_ai_always" )
+		soldier.SetMaxHealth( 7800 )
+		soldier.SetHealth( 7800 )
+		Highlight_SetFriendlyHighlight( soldier, "fw_friendly_titan" )
 	}
 }
 
+void function setClassScores( entity player )
+{
+	classscore0[player] <- 0
+	classscore1[player] <- 0
+	classscore2[player] <- 0
+	classscore3[player] <- 0
+	classscore4[player] <- 0
+	classscore5[player] <- 0
+	classscore6[player] <- 0
+	classscore7[player] <- 0
+	classscore8[player] <- 0
+	classscore9[player] <- 0
+	classscore10[player] <- 0
+	classscore11[player] <- 0
+	classscore12[player] <- 0
+}
 void function OnClientConnected( entity player )
 {
 	hasSpawned[player] <- false
@@ -177,8 +216,12 @@ void function OnClientConnected( entity player )
 	usedScore[player] <- 0
 	givenScore[player] <- 0
 	deathDelay[player] <- false
-	spectreSpawn[player] <- false
-	specialistSpawn[player] <- false
+	specialistDrones[player] <- 0
+	currentClass[player] <- 0
+	rifleStreak[player] <- 0
+	gruntScore[player] <- 0
+	setClassScores(player)
+
 
 	playerChatterTable[player.GetUID()] <- false
 	AddPlayerHeldButtonEventCallback( player, IN_USE, CallbackFuncCornerUs, 0.3 )
@@ -255,7 +298,6 @@ void function SwitchClasses( entity player )
 
 void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //Happens on player killed
 {
-	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
 	int score = expect int(calculateScore( player ))
 	print("Player Score:")
 	print(score)
@@ -285,62 +327,50 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	int classScore = 0
 	string str1 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str1 != "[LOCKED - PLAY AS SPECIALIST]" && str1 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str1.find("[") == null ) //string does not contain "["
 	{
 		if (classScore > score )
 		{
-			title1 = "[LOCKED] "
+			title1 = "[$$$] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
 	string str2 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str2 != "[LOCKED - PLAY AS SPECIALIST]" && str2 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str2.find("[") == null )
 	{
 		if (classScore > score )
 		{
-			title2 = "[LOCKED] "
+			title2 = "[$$$] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
 	string str3 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str3 != "[LOCKED - PLAY AS SPECIALIST]" && str3 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str3.find("[") == null )
 	{
 		if (classScore > score)
 		{
-			title3 = "[LOCKED] "
+			title3 = "[$$$] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
 	string str4 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str4 != "[LOCKED - PLAY AS SPECIALIST]" && str4 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str4.find("[") == null )
 	{
 		if (classScore > score)
 		{
-			title4 = "[LOCKED] "
+			title4 = "[$$$] "
 		}
 	}
-	if (title1 == "")
+	if (title1 == "" && str1.find("[") == null )
 	{
 		selectedClass[player] = shownClass[player]
 	}
 	else
 	{
 		selectedClass[player] = 0
-	}
-	if ( spectreSpawn[player] == false )
-	{
-		if (selectedClass[player] == 9 || selectedClass[player] == 11)
-			selectedClass[player] = 7
-		if ( selectedClass[player] == 8)
-			selectedClass[player] = 0 // 15 points isnt enough for spectre
-	}
-	if ( specialistSpawn[player] == false)
-	{
-		if ( selectedClass[player] == 10 )
-			selectedClass[player] = 6
 	}
 	NSEditStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
 	NSEditStatusMessageOnPlayer(player,"",title2 + str2, "status2")
@@ -358,44 +388,50 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 	int classScore = 0
 	string str1 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str1 == "[LOCKED - PLAY AS SPECIALIST]" || str1 == "[LOCKED - PLAY AS SPECTRE]")
+	if ( str1.find("[") == null ) //string does not contain "["
 	{
-		selectedClass[ player ] = 0
-	}
-	else if (classScore > score)
-	{
-		title1 = "[LOCKED] "
-		selectedClass[ player ] = 0
+		if (classScore > score )
+		{
+			title1 = "[$$$] "
+		}
 	}
 	shown = expect int(increaseShown( shown ))
 	string str2 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str2 != "[LOCKED - PLAY AS SPECIALIST]" && str2 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str2.find("[") == null )
 	{
 		if (classScore > score )
 		{
-			title2 = "[LOCKED] "
+			title2 = "[$$$] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
 	string str3 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str3 != "[LOCKED - PLAY AS SPECIALIST]" && str3 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str3.find("[") == null )
 	{
 		if (classScore > score)
 		{
-			title3 = "[LOCKED] "
+			title3 = "[$$$] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
 	string str4 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
-	if (str4 != "[LOCKED - PLAY AS SPECIALIST]" && str4 != "[LOCKED - PLAY AS SPECTRE]")
+	if ( str4.find("[") == null )
 	{
 		if (classScore > score)
 		{
-			title4 = "[LOCKED] "
+			title4 = "[$$$] "
 		}
+	}
+	if (title1 == "" && str1.find("[") == null )
+	{
+		selectedClass[player] = shownClass[player]
+	}
+	else
+	{
+		selectedClass[player] = 0
 	}
 	NSCreateStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
 	NSCreateStatusMessageOnPlayer(player,"",title2 + str2, "status2")
@@ -404,84 +440,186 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 
 }
 
+string function opPilotText()
+{
+	string classType = " AS A GRUNT"
+	if ( GetConVarString( "CLASS_OPPILOT_UNLOCK_TYPE" ) == "rifle")
+	{
+		classType = " AS A RIFLEMAN"
+	}
+	else if ( GetConVarString( "CLASS_OPPILOT_UNLOCK_TYPE" ) == "free")
+	{
+		classType = " AS A FREE GRUNT CLASS"
+	}
+	else if ( GetConVarString( "CLASS_OPPILOT_UNLOCK_TYPE" ) == "any")
+	{
+		classType = " "
+	}
+	return classType
+}
+
 void function sendClassMessage( entity player, int classNum )
 {
+	int score = expect int(calculateScore( player ))
+	string scoreText = "You have " + score + " points to spend \n"
 	string sentText = ""
+
+	table< entity, int > cClassScore = classscore0
 	switch( classNum )
 	{
 		case 0:
-			sentText = "Rifleman\nHealth: 100\nPrimary: R201, R101, Flatline, and Hemlok\nPossible Mods: HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			cClassScore = classscore0
 			break
 		case 1:
-			sentText = "Communications\nHealth: 100\nPrimary: R97, CAR, Alternator\nPossible Mods: Holosight, HCOG\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			cClassScore = classscore1
 			break
 		case 2:
-			sentText = "Support\nHealth: 100\nPrimary: EVA-8 Auto\nPossible Mods: Extended Magazine\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			cClassScore = classscore2
+			break
+		case 3:
+			cClassScore = classscore3
+			break
+		case 4:
+			cClassScore = classscore4
+			break
+		case 5:
+			cClassScore = classscore5
+			break
+		case 6:
+			cClassScore = classscore6
+			break
+		case 7:
+			cClassScore = classscore7
+			break
+		case 8:
+			cClassScore = classscore8
+			break
+		case 9:
+			cClassScore = classscore9
+			break
+		case 10:
+			cClassScore = classscore10
+			break
+		case 11:
+			cClassScore = classscore11
+			break
+		case 12:
+			cClassScore = classscore12
+			break
+	}
+	string cScoreText = "You have " + cClassScore[player] + " points with this class\n"
+	
+	switch( classNum )
+	{
+		case 0:
+			sentText = "Rifleman\nHealth: 100\nPrimary: R201, R101, Flatline, and Hemlok\nUpgrades: HCOG -> Fast Reload\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			break
+		case 1:
+			sentText = "Communications\nHealth: 100\nPrimary: R97, CAR, Alternator\nUpgrades: Holosight/HCOG -> Gunrunner\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
+			break
+		case 2:
+			sentText = "Support\nHealth: 100\nPrimary: EVA-8 Auto\nUpgrades: Extended Mag -> Fast Swap\nPistol: P2016\nAnti-Titan: None\nOrdinance: Frag Grenade\nAbilities: None"
 			break
 		case 3:
 			sentText = "Marksman\nHealth: 100\nPrimary: G2A5\nPossible Mods: HCOG Ranger\nPistol: P2016\nAnti-Titan: None\nOrdinace: Frag Grenade\nAbilities: None"
 			break
 		case 4:
-			sentText = "Heavy\nHealth: 100\nPrimary: Spitfire, SMR\nPossible Mods: HCOG Ranger\nPistol: Wingman\nAnti-Titan: Archer\nOrdinance: Satchel\nAbilities: None"
-			break
-		case 5:
-			sentText = "Shield Captain\nHealth: 150\nPrimary: Spitfire\nPossible Mods: AOG\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: Personal Shield"
-			break
-		case 6:
-			sentText = "Specialist\nHealth: 125\nPrimary: Volt, Mastiff\nMods: None\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone (Regenerating)"
-			break
-		case 7:
-			sentText = "Spectre\nHealth: 130\nPrimary: Volt\nPossible Mods: Holosight\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
-			break
-		case 8:
-			if ( spectreSpawn[player] == true)
+			if ( classscore3[player] >= GetConVarInt( "CLASS_SNIPER_UNLOCK" ) )
 			{
-				sentText = "Blast Spectre\nHealth: 150\nPrimary: L-Star\nPossible Mods: Threat Scope\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Self Destruct, Double Jump, No Slide, Delayed Health Regeneration"
+				sentText = "Sniper\nHealth: 100\nPrimary: DMR\nUpgrades: Zoom Optic -> Extended Mag\nPistol: P2016\nAnti-Titan: Archer\nOrdinace: Frag Grenade\nAbilities: None"
 			}
 			else
 			{
-				sentText = "[LOCKED - PLAY AS SPECTRE]"
+				sentText = "[GET " + GetConVarInt( "CLASS_SNIPER_UNLOCK" ) + " MARKSMAN POINTS]"
+			}
+			break
+		case 5:
+			sentText = "Heavy\nHealth: 100\nPrimary: Spitfire, SMR\nUpgrades: HCOG Ranger -> Fast Reload\nPistol: Wingman\nAnti-Titan: Archer\nOrdinance: Satchel\nAbilities: None"
+			break
+		case 6:
+			sentText = "Shield Captain\nHealth: 150\nPrimary: Spitfire\nUpgrades: HCOG Ranger -> Extended Mag\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: Personal Shield"
+			break
+		case 7:
+			sentText = "Specialist\nHealth: 125\nPrimary: Volt, Mastiff\nUpgrades: Quickswap -> Fast Reload\nPistol: Mozambique\nAnti-Titan: MGL\nOrdinance: Arc Grenade\nAbilities: Plasma Drone and Beam Drone (Regenerating)"
+			break
+		case 8:
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) )
+			{
+				sentText = "Spectre\nHealth: 130\nPrimary: Volt\nUpgrades: Holosight -> Fast Reload\nPistol: P2016\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+			}
+			else
+			{
+				sentText = "[GET " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " POINTS AS A GRUNT]"
 			}
 			break
 		case 9:
-			if ( spectreSpawn[player] == true)
+			if ( classscore12[player] >= GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) )
 			{
-				sentText = "Sniper Spectre\nHealth: 130\nPrimary: Kraber, DoubleTake\nMods: Amped Snipers\nPistol: P2016\nAnti-Titan: Charge Rifle\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
+				sentText = "Blast Spectre\nHealth: 150\nPrimary: L-Star\nUpgrades: Threat Scope\nPistol: Wingman\nAnti-Titan: None\nOrdinance: Arc Grenade\nAbilities: Self Destruct, No Slide, Delayed Health Regeneration"
 			}
 			else
 			{
-				sentText = "[LOCKED - PLAY AS SPECTRE]"
+				sentText = "[GET " + GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) + " POINTS AS A SPECTRE LEADER]"
 			}
 			break
 		case 10:
-			if ( specialistSpawn[player] == true)
+			if ( classscore8[player] >= GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) )
 			{
-				sentText = "Sentry Technician\nHealth: 125\nPrimary: EM-4 Cold War\nRandom Mods: Speedloader, Extended Mag\nPistol: RE-45 Auto\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: 2 Deployable Sentry Turrets (Regenerating)"
+				sentText = "Sniper Spectre\nHealth: 130\nPrimary: Kraber, DoubleTake\nUpgrades: Quickscope -> Amped Weapons\nPistol: P2016\nAnti-Titan: Charge Rifle\nOrdinance: Arc Grenade\nAbilities: Double Jump, Reduced Slide"
 			}
 			else
 			{
-				sentText = "[LOCKED - PLAY AS SPECIALIST]"
+				sentText = "[GET " + GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) +" POINTS AS A SPECTRE]"
 			}
 			break
 		case 11:
-			if ( spectreSpawn[player] == true)
+			if ( specialistDrones[player] >= GetConVarInt( "CLASS_SENTRY_UNLOCK" ) )
 			{
-				sentText = "Spectre Leader\nHealth: 150\nPrimary: Devotion\nRandom Mods: Threat Scope, Extended Mag\nPistol: P2016\nAnti-Titan: Thunderbolt\nOrdinance: Arc Grenade (regenerating)\nAbilities: Double Jump, Reduced Slide"
+				sentText = "Sentry Technician\nHealth: 125\nPrimary: EM-4 Cold War\nUpgrades: Extended Ammo -> Fast Reload\nPistol: RE-45 Auto\nAnti-Titan: None\nOrdinance: Electric Smoke Grenade\nAbilities: 2 Deployable Sentry Turrets (Regenerating)"
 			}
 			else
 			{
-				sentText = "[LOCKED - PLAY AS SPECTRE]"
+				sentText = "[SPAWN " + GetConVarInt( "CLASS_SENTRY_UNLOCK" ) +" DRONES AS A SPECIALIST]"
 			}
 			break
 		case 12:
-			sentText = "Pilot\nHealth: 150\nPrimary: R201\nMods: HCOG, TacKill, Amped (All Guaranteed)\nPistol: RE-45 Auto\nAnti-Titan: Thunderbolt (infinite ammo)\nOrdinance: 2 Frag Grenades (regenerating)\nAbilities: Regenerating Cloak, Double Jump, Wallrun, Advanced Melee"
+			if (  classscore8[player] + classscore10[player] >= GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) )
+			{
+				sentText = "Spectre Leader\nHealth: 150\nPrimary: Devotion\nUpgrades: Threat Scope -> Extended Mag\nPistol: P2016\nAnti-Titan: Thunderbolt\nOrdinance: Arc Grenade (regenerating)\nAbilities: Double Jump, Reduced Slide"
+			}
+			else
+			{
+				sentText = "[GET " + GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) + " POINTS WITH A SPECTRE CLASS]"
+			}
+			break
+		case 13:
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) )
+			{
+				sentText = "Pilot\nHealth: 150\nPrimary: Amped R101 with HCOG and Tackill\nPistol: RE-45 Auto with Quickscope\nAnti-Titan: Thunderbolt (infinite ammo)\nOrdinance: 2 Frag Grenades (regenerating)\nAbilities: Regenerating Cloak, Double Jump, Wallrun, Kunai, Personal Dropship"
+			}
+			else
+			{
+				sentText = "[GET " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " POINTS AS A GRUNT]"
+			}
+			break
+		case 14:
+			if ( rifleStreak[player] >= GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) )
+			{
+				sentText = "Pilot\nHealth: 150\nPrimary: Amped R101 with HCOG, Extended Ammo, and TacKill\nPistol: Smart Pistol Auto with Extended Ammo, Gunrunner, and TacKill\nAnti-Titan: Amped Thunderbolt with Infinite Ammo and Fast Reload\nAbilities: Gravity Star, Pulse Blade, Holopilot, Stim \nOther Abilities: Double Jump, Wallrun, Kunai, Personal Dropship"
+			}
+			else
+			{
+				string classType = opPilotText()
+				sentText = "[GET A " + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) +" KILLSTREAK" + classType + "]"
+			}
 			break
 		default:
 			sentText = "[ERROR]"
 			print("Invalid Classnumber to return sentText, recieved " + string(classNum))
 			break
 	}
-	SendHudMessage(player, sentText,  0, -0.3, 255, 255, 255, 255, 0.15, 100, 0.3)
+	//SendHudMessage(player, "message", x-pos, y-pos, r, g, b, opacity (alpha), fade-in-time, hold-time, fade-out-time)
+	SendHudMessage(player, scoreText + cScoreText + sentText,  2, -0.4, 255, 255, 255, 255, 0.15, 100, 0.3)
 }
 
 void function clearClassMessage( entity player )
@@ -509,6 +647,99 @@ function increaseShown( int shown)
 function determineClass( int classNum, entity player )
 {
 	string returnClass = "Error"
+	switch (classNum) {
+		case 0:
+			returnClass = "Rifleman";
+			break;
+		case 1:
+			returnClass = "Communications";
+			break;
+		case 2:
+			returnClass = "Support";
+			break;
+		case 3:
+			returnClass = "Marksman - " + GetConVarInt("COST_MARKSMAN") + " points";
+			break;
+		case 4:
+			if (classscore3[player] >= GetConVarInt("CLASS_SNIPER_UNLOCK")) {
+				returnClass = "Sniper - " + GetConVarInt("COST_SNIPER") + " points";
+			}
+			else {
+				returnClass = "[GET " + GetConVarInt("CLASS_SNIPER_UNLOCK") + " POINTS AS A MARKSMAN]";
+			}
+			break;
+		case 5:
+			returnClass = "Heavy - " + GetConVarInt("COST_HEAVY") + " points";
+			break;
+		case 6:
+			returnClass = "Shield Captain - " + GetConVarInt("COST_SHIELD_CAPTAIN") + " points";
+			break;
+		case 7:
+			returnClass = "Specialist - " + GetConVarInt("COST_SPECIALIST") + " points";
+			break;
+		case 8:
+			if (gruntScore[player] >= GetConVarInt("CLASS_SPECTRE_UNLOCK")) {
+				returnClass = "Spectre - " + GetConVarInt("COST_SPECTRE") + " points";
+			}
+			else {
+				returnClass = "[GET " + GetConVarInt("CLASS_SPECTRE_UNLOCK") + " POINTS AS A GRUNT]";
+			}
+			break;
+		case 9:
+			if (classscore12[player] >= GetConVarInt("CLASS_BLASTSPECTRE_UNLOCK")) {
+				returnClass = "Blast Spectre - " + GetConVarInt("COST_BLAST_SPECTRE") + " points";
+			}
+			else {
+				returnClass = "[GET " + GetConVarInt("CLASS_BLASTSPECTRE_UNLOCK") + " POINTS AS A SPECTRE LEADER]";
+			}
+			break;
+		case 10:
+			if (classscore8[player] >= GetConVarInt("CLASS_SNIPESPECTRE_UNLOCK")) {
+				returnClass = "Sniper Spectre - " + GetConVarInt("COST_SNIPESPECTRE") + " points";
+			}
+			else {
+				returnClass = "[GET " + GetConVarInt("CLASS_SNIPESPECTRE_UNLOCK") + " POINTS AS A SPECTRE]";
+			}
+			break;
+		case 11:
+			if (specialistDrones[player] >= GetConVarInt("CLASS_SENTRY_UNLOCK")) {
+				returnClass = "Sentry Technician - " + GetConVarInt("COST_SENTRY") + " points";
+			}
+			else {
+				returnClass = "[SPAWN " + GetConVarInt("CLASS_SENTRY_UNLOCK") + " DRONES AS A SPECIALIST]";
+			}
+			break;
+		case 12:
+			if (classscore8[player] + classscore10[player] >= GetConVarInt("CLASS_SPECTRELEADER_UNLOCK")) {
+				returnClass = "Spectre Leader - " + GetConVarInt("COST_SPECTRE_LEADER") + " points";
+			}
+			else {
+				returnClass = "[GET " + GetConVarInt("CLASS_SPECTRELEADER_UNLOCK") + " POINTS WITH A SPECTRE CLASS]";
+			}
+			break;
+		case 13:
+			if (gruntScore[player] >= GetConVarInt("CLASS_PILOT_UNLOCK")) {
+				returnClass = "Pilot - " + GetConVarInt("COST_PILOT") + " points";
+			}
+			else {
+				returnClass = "[GET " + GetConVarInt("CLASS_PILOT_UNLOCK") + " POINTS AS A GRUNT]";
+			}
+			break;
+		case 14:
+			if (rifleStreak[player] >= GetConVarInt("CLASS_OPPILOT_UNLOCK_STREAK")) {
+				returnClass = "Next-Gen Pilot - " + GetConVarInt("COST_OPPILOT") + " points";
+			}
+			else {
+				string classType = opPilotText();
+				returnClass = "[GET A " + GetConVarInt("CLASS_OPPILOT_UNLOCK_STREAK") +" KILLSTREAK" + classType + "]";
+			}
+			break;
+		default:
+			returnClass = "[ERROR]";
+			print("Invalid Classnumber to return Class, received " + classNum);
+			break;
+	}
+	/* Here for debugging as the above code was written by AI trained on the current code
 	switch( classNum )
 	{
 		case 0:
@@ -521,68 +752,104 @@ function determineClass( int classNum, entity player )
 			returnClass = "Support"
 			break
 		case 3:
-			returnClass = "Marksman - 5 points"
+			returnClass = "Marksman - " + GetConVarInt( "COST_MARKSMAN" ) + " points"
 			break
 		case 4:
-			returnClass = "Heavy - 10 points"
-			break
-		case 5:
-			returnClass = "Shield Captain - 20 points"
-			break
-		case 6:
-			returnClass = "Specialist - 30 points"
-			break
-		case 7:
-			returnClass = "Spectre - 30 points"
-			break
-		case 8:
-			if ( spectreSpawn[player] == true)
+			if ( classscore3[player] >= GetConVarInt( "CLASS_SNIPER_UNLOCK" ) )
 			{
-				returnClass = "Blast Spectre - 15 points"
+				returnClass = "Sniper - 10 points"
 			}
 			else
 			{
-				returnClass = "[LOCKED - PLAY AS SPECTRE]"
+				returnClass = "[GET " + GetConVarInt( "CLASS_SNIPER_UNLOCK" ) +" POINTS AS A MARKSMAN]"
+			}
+			break
+		case 5:
+			returnClass = "Heavy - 10 points"
+			break
+		case 6:
+			returnClass = "Shield Captain - 20 points"
+			break
+		case 7:
+			returnClass = "Specialist - 30 points"
+			break
+		case 8:
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) )
+			{
+				returnClass = "Spectre - 20 points"
+			}
+			else
+			{
+				returnClass = "[GET " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " POINTS AS A GRUNT]"
 			}
 			break
 		case 9:
-			if ( spectreSpawn[player] == true)
+			if ( classscore12[player] >= GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) )
 			{
-				returnClass = "Sniper Spectre - 40 points"
+				returnClass = "Blast Spectre - 25 points"
 			}
 			else
 			{
-				returnClass = "[LOCKED - PLAY AS SPECTRE]"
+				returnClass = "[GET " + GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" )" POINTS AS A SPECTRE LEADER]"
 			}
 			break
 		case 10:
-			if ( specialistSpawn[player] == true)
+			if (  classscore8[player] >= GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) )
+			{
+				returnClass = "Sniper Spectre - 25 points"
+			}
+			else
+			{
+				returnClass = "[GET " + GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) + " POINTS AS A SPECTRE]"
+			}
+			break
+		case 11:
+			if ( specialistDrones[player] >= GetConVarInt( "CLASS_SENTRY_UNLOCK" ) )
 			{
 				returnClass = "Sentry Technician - 40 points"
 			}
 			else
 			{
-				returnClass = "[LOCKED - PLAY AS SPECIALIST]"
-			}
-			break
-		case 11:
-			if ( spectreSpawn[player] == true)
-			{
-				returnClass = "Spectre Leader - 50 points"
-			}
-			else
-			{
-				returnClass = "[LOCKED - PLAY AS SPECTRE]"
+				returnClass = "[SPAWN " + GetConVarInt( "CLASS_SENTRY_UNLOCK" ) + " DRONES AS A SPECIALIST]"
 			}
 			break
 		case 12:
-			returnClass = "Pilot - 80 points"
+			if (  classscore8[player] + classscore10[player] >= GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) )
+			{
+				returnClass = "Spectre Leader - 35 points"
+			}
+			else
+			{
+				returnClass = "[GET " + GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) + " POINTS WITH A SPECTRE CLASS]"
+			}
+			break
+		case 13:
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) )
+			{
+				returnClass = "Pilot - 80 points"
+			}
+			else
+			{
+				returnClass = "[GET " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " POINTS AS A GRUNT]"
+			}
+			break
+		case 14:
+			if ( rifleStreak[player] >= GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) )
+			{
+				returnClass = "Next-Gen Pilot - 140 points"
+			}
+			else
+			{
+				string classType = opPilotText()
+				returnClass = "[GET A " + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) +" KILLSTREAK" + classType + "]"
+			}
 			break
 		default:
 			returnClass = "[ERROR]"
 			print("Invalid Classnumber to return Class, recieved " + string(classNum))
 			break
 	}
+	*/
 	return returnClass
 }
 
@@ -590,35 +857,39 @@ function determineClassScore( int classNum )
 {
 	switch( classNum )
 	{
-		case 0:
+		case 0: // Rifleman
 			return 0
-		case 1:
+		case 1: // Communications
 			return 0
-		case 2:
+		case 2: // Support
 			return 0
-		case 3:
-			return 5
-		case 4:
-			return 10
-		case 5:
-			return 20
-		case 6:
-			return 30
-		case 7:
-			return 30
-		case 8:
-			return 15
-		case 9:
-			return 40
-		case 10:
-			return 40
-		case 11:
-			return 50
-		case 12:
-			return 80
+		case 3: // Marksman
+			return GetConVarInt( "COST_MARKSMAN" )
+		case 4: // Sniper
+			return GetConVarInt( "COST_SNIPER" )
+		case 5: // Heavy
+			return GetConVarInt( "COST_HEAVY" )
+		case 6: // Shield Captain
+			return GetConVarInt( "COST_SHIELD_CAPTAIN" )
+		case 7: // Specialist
+			return GetConVarInt( "COST_SPECIALIST" )
+		case 8: // Spectre
+			return GetConVarInt( "COST_SPECTRE" )
+		case 9: // Blast Spectre
+			return GetConVarInt( "COST_BLAST_SPECTRE" )
+		case 10: // Sniper Spectre
+			return GetConVarInt( "COST_SNIPESPECTRE" )
+		case 11: // Sentry Technician
+			return GetConVarInt( "COST_SENTRY" )
+		case 12: // Spectre Leader
+			return GetConVarInt( "COST_SPECTRE_LEADER" )
+		case 13: // Pilot
+			return GetConVarInt( "COST_PILOT" )
+		case 14: // Next-Gen Pilot
+			return GetConVarInt( "COST_OPPILOT" )
 		default:
 			print("Invalid Classnumber to return Score, recieved " + string(classNum))
-			return 50
+			return 80
 	}
 }
 
@@ -658,7 +929,7 @@ void function CornerUsChatterThink( entity player )
 
 void function CallbackFuncSpotEnemy( entity player )
 {
-	if (player.GetModelName != $"models/robots/spectre/imc_spectre.mdl" && player.GetModelName != $"models/humans/pilots/pilot_light_ged_m.mdl")
+	if (player.GetModelName() != $"models/robots/spectre/imc_spectre.mdl" && player.GetModelName() != $"models/humans/pilots/pilot_light_ged_m.mdl")
 	{
 		thread SpotEnemyChatterThink( player )
 	}
@@ -683,8 +954,33 @@ void function SpotEnemyChatterThink( entity player )
 		return
 	}
 	if( traceResult.hitEnt.GetTeam() == player.GetTeam() )
+	{
+		array<string> chatterClasses = [ "npc_spectre", "npc_super_spectre", "npc_titan" ]
+		string className = traceResult.hitEnt.GetClassName()
+		//print( "hitEnt's classname: " + className )
+		if( !chatterClasses.contains( className ) )
+			return
+		switch( className )
+		{
+			case "npc_spectre":
+				EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_reactSpectreProxFriendly_0" + string( RandomIntRange( 1, 7 ) ) )
+				thread DelayedRestoreBattleChatter( uid, 3 )
+				break
+			case "npc_titan":
+				if( CoinFlip() )
+					EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_reactTitanfallFriendlyArrives_01" )
+				else
+					EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_reactTitanfallFriendlyInbound_01" )
+				thread DelayedRestoreBattleChatter( uid, 5 )
+				break
+			case "npc_super_spectre":
+				EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_reactReaperFriendlyArrives_0" + string( RandomIntRange( 1, 2 ) ) )
+				thread DelayedRestoreBattleChatter( uid, 3 )
+				break
+		}
 		return
-	array<string> chatterClasses = [ "npc_spectre", "npc_stalker", "npc_prowler", "npc_soldier", "npc_titan" ]
+	}
+	array<string> chatterClasses = [ "npc_spectre", "npc_stalker", "npc_prowler", "npc_super_spectre", "npc_soldier", "npc_titan" ]
 	string className = traceResult.hitEnt.GetClassName()
 	//print( "hitEnt's classname: " + className )
 	if( !chatterClasses.contains( className ) )
@@ -704,7 +1000,15 @@ void function SpotEnemyChatterThink( entity player )
 			thread DelayedRestoreBattleChatter( uid, 3 )
 			break
 		case "npc_soldier":
-			EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engagepilotenemy_0" + string( RandomIntRange( 1, 7 ) ) )
+			if ( CoinFlip() )
+			{
+				if ( player.GetTeam() == TEAM_IMC )
+					EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engageenemygrunt_0" + string( RandomIntRange( 1, 2 ) ) )
+				else
+					EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engagepilotenemy_0" + string( RandomIntRange( 1, 7 ) ) )
+			}
+			else
+				EmitSoundOnEntity( player, "diag_imc_grunt" + string( RandomIntRange( 1, 6 ) ) + "_bc_engagepilotenemy_0" + string( RandomIntRange( 1, 7 ) ) )
 			thread DelayedRestoreBattleChatter( uid, 3 )
 			break
 		case "npc_titan":
@@ -730,14 +1034,8 @@ void function DelayedRestoreBattleChatter( string uid, float delay )
 
 void function OnPlayerRespawned( entity player )
 {
-
-
-	//if( GetZiplineDropshipSpawns().len() != 0 )
-	//	RespawnInDropShip( player )
-	//else
 	deathDelay[player] = false
 	clearClassMessage( player )
-	TakeAllWeapons(player)
 	if (hasSpawned[player])
 	{
 		BecomesGrunt_Class(player, selectedClass[player])
@@ -747,12 +1045,44 @@ void function OnPlayerRespawned( entity player )
 	{
 		BecomesGrunt_Random(player)
 	}
-	SpawnFromDroppod( player )
 	thread OnPlayerRespawned_Threaded( player )
 }
 
 void function OnPlayerRespawned_Threaded( entity player )
 {
+	bool dropShipStatus =  checkDropShipStatus(player) //Spawn in dropship if one is available
+	if (!hasSpawned[player])
+	{
+		print("Respawned normally because it was their first spawn (failsafe)")
+	}
+	else if ( player.GetModelName() == $"models/humans/pilots/pilot_medium_geist_m.mdl" || player.GetModelName() == $"models/humans/pilots/pilot_medium_stalker_m.mdl")
+	{
+		print("Respawned in Dropship because they were a pilot!")
+		RespawnInDropShip( player )
+	}
+	else if ( dropShipStatus == true )
+	{
+		print("Respawned in drop ship because one was available!")
+		RespawnInDropShip( player )
+	}
+	else
+	{
+		int random = RandomInt(10) 
+		if ( random == 1 ) //10% chance to create a new dropship
+		{
+			RespawnInDropShip( player )
+			print("Respawned in Dropship")
+		}
+		else if ( random == 4 || random == 5 || random == 6 || random == 3) // 40% chance of spawning in droppod
+		{
+			SpawnFromDroppod( player )
+			print("Respawned in Droppod")
+		}
+		else
+		{
+			print("Respawned without animation") // 50% chance of regular spawn
+		}
+	}
 	WaitFrame()
 	if( IsValid(player) )
 		PlayerEarnMeter_SetMode( player, eEarnMeterMode.DISABLED )	//彻底关闭强化(泰坦)条
@@ -760,7 +1090,8 @@ void function OnPlayerRespawned_Threaded( entity player )
 	if (!hasSpawned[player])
 	{
 		hasSpawned[player] = true
-		thread sendPingInfo(player)
+		thread sendPingInfo( player )
+		thread sendRandomInfo( player )
 	}
 }
 
@@ -768,7 +1099,7 @@ void function sendPingInfo( entity player )
 {
 	wait 16
 	print("Sending ping info")
-	NSSendInfoMessageToPlayer(player, "Hold 'interact' to say a voiceline, or press 'interact' to call out enemies")
+	NSSendInfoMessageToPlayer(player, "Hold your interact key to say a voiceline, or press interact to call out enemies" )
 }
 
 void function sendScoreInfo( entity player )
@@ -781,18 +1112,112 @@ void function sendCycleInfo( entity player )
 {
 	wait 1
 	print("Sending change info")
-	NSSendInfoMessageToPlayer(player, "Use WASD or Controller Bumpers while in the deployment screen to switch classes")
+	NSSendInfoMessageToPlayer(player, "Use WASD or Controller Bumpers while in the deployment screen to switch classes" )
 }
+
+void function sendRandomInfo( entity player )
+{
+	wait RandomIntRange( 60, 120 ) //Every 1-2 minutes send info
+	print("Sending random info")
+	int infoMessage = RandomInt(11)
+	string infoText = ""
+	switch ( infoMessage )
+	{
+		case 0:
+			infoText = "Focusing on a specific class can give you extra perks from playing it"
+			break
+		case 1:
+			infoText = "Hold your interact key to say a voiceline, or press interact to call out enemies"
+			break
+		case 2:
+			infoText = "Extra info on classes can be found in the deployment screen"
+			break
+		case 3:
+			infoText = "Make sure you read class descriptions, some abilites can change how you fight"
+			break
+		case 4:
+			infoText = "Your points reset every round, spend those points!"
+			break
+		case 5:
+			infoText = "Use WASD or Controller Bumpers while in the deployment screen to switch classes"
+			break
+		case 6:
+			infoText = "Most spectre classes have double-jump, use this to reach new heights"
+			break
+		case 7:
+			infoText = "You automatically gain 5 points from using Blast Spectre's suicide ability, so blast away!"
+			break
+		case 8:
+			infoText = "Specialists can build an army of drones that can overwhelm unsuspecing enemies"
+			break
+		case 9:
+			infoText = "Make sure to stick together to take out targets like Reapers or Pilots"
+			break
+		case 10:
+			infoText = "The right tool for the right job, the heavy class can make quick work of Reapers and Titans!"
+			break
+		default:
+			infoText = "Focusing on a specific class can give you extra perks from playing it"
+			break
+	}
+	NSSendInfoMessageToPlayer(player, infoText)
+	thread sendRandomInfo( player ) //creats infinite loop
+	return
+}
+
 void function StartKillerOutline( entity victim, entity attacker, var damageInfo )
 {
 	if( attacker.IsNPC() || attacker.IsPlayer() )
 		Highlight_SetDeathRecapHighlight( attacker, "killer_outline" )
 }
 
-void function OnGruntKilled( entity victim, entity attacker, var damageInfo )
+void function OnGruntKilled( entity victim, entity attacker, var damageInfo ) //On player killed
 {
+	if ( rifleStreak[victim] < 10 )
+		rifleStreak[victim] = 0
 	PlayEnemyKilledChatter( victim, attacker )
 	PlayFriendlyKilledChatter( victim, attacker )
+	if ( attacker.IsPlayer() )
+	{
+		if ( GetConVarString( "CLASS_OPPILOT_UNLOCK_TYPE" ) == "any" ) // Any class
+		{
+			rifleStreak[attacker] += 1
+			print("Increased rifleman streak")
+			if ( rifleStreak[attacker] == GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) )
+				NSSendAnnouncementMessageToPlayer( attacker, "Unlocked Next-Gen Pilot", "Achieved" + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) + "killstreak", <1,1,0>, 1, 1 )
+		}
+		else if ( GetConVarString( "CLASS_OPPILOT_UNLOCK_TYPE" ) == "free" ) // Free classes
+		{
+			if ( currentClass[attacker] == 0 || currentClass[attacker] == 1 || currentClass[attacker] == 2 )
+			{
+				rifleStreak[attacker] += 1
+				print("Increased rifleman streak")
+				if ( rifleStreak[attacker] == GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ))
+					NSSendAnnouncementMessageToPlayer( attacker, "Unlocked Next-Gen Pilot", "Achieved " + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) + " killstreak as a free grunt class", <1,1,0>, 1, 1 )
+			}
+		}
+		else if ( GetConVarString( "CLASS_OPPILOT_UNLOCK_TYPE" ) == "rifle" ) // Grunt classes
+		{
+			if ( currentClass[attacker] == 0 )
+			{
+				rifleStreak[attacker] += 1
+				print("Increased rifleman streak")
+				if ( rifleStreak[attacker] == GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ))
+					NSSendAnnouncementMessageToPlayer( attacker, "Unlocked Next-Gen Pilot", "Achieved " + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) + " killstreak as a Rifleman", <1,1,0>, 1, 1 )
+			}
+		}
+		else // Sets to "grunt"
+		{
+			if ( currentClass[attacker] == 0 || currentClass[attacker] == 1 || currentClass[attacker] == 2 || currentClass[attacker] == 3 || currentClass[attacker] == 4 || currentClass[attacker] == 5 || currentClass[attacker] == 6 || currentClass[attacker] == 11 )
+			{
+				rifleStreak[attacker] += 1
+				print("Increased rifleman streak")
+				if ( rifleStreak[attacker] == GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ))
+					NSSendAnnouncementMessageToPlayer( attacker, "Unlocked Next-Gen Pilot", "Achieved " + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) + " killstreak as a Grunt Class", <1,1,0>, 1, 1 )
+			}
+		}
+
+	}
 	thread startDelay( victim )
 }
 
@@ -804,7 +1229,7 @@ void function startDelay( entity victim )
 
 void function PlayEnemyKilledChatter( entity victim, entity attacker )
 {
-	if( victim.IsPlayer() && attacker.IsPlayer() )
+	if( attacker.IsPlayer() )
 		thread DelayedEnemyKilledChatter( attacker )
 }
 
@@ -860,13 +1285,13 @@ void function DelayedFriendlyKilledChatter( entity player )
 void function OnPlayerChangeLoadout( entity player , PilotLoadoutDef p)
 {
 	BecomesGrunt_Loadout( player )
+	playerLoadout[player] <- p
 }
 
 void function BecomesGrunt_Loadout( entity player )
 {
 	if( IsValid( player ) )
 	{
-		TakeAllWeapons( player )
 		Highlight_SetFriendlyHighlight( player, "fw_friendly" )
 		//player.kv.gravity = 1.4
 		//HideName( player )
@@ -879,6 +1304,10 @@ void function SetGruntSkin( entity player, string pMods, string pModel )
 	if (pModel == "models/humans/pilots/pilot_light_ged_m.mdl")
 	{
 		player.SetModel( $"models/humans/pilots/pilot_light_ged_m.mdl")
+	}
+	else if (pModel == "models/humans/pilots/pilot_medium_stalker_m.mdl")
+	{
+		player.SetModel( $"models/humans/pilots/pilot_medium_stalker_m.mdl")
 	}
 	else if(pModel == "models/robots/spectre/imc_spectre.mdl")
 	{
@@ -938,26 +1367,9 @@ void function SetGruntSkin( entity player, string pMods, string pModel )
 	}
 }
 
-void function RandomMods(entity player, string weapon, array<string> mods)
-{
-	int randomM = RandomInt(2)
-	switch(randomM)
-	{
-		case 0: // No mod
-			player.GiveWeapon( weapon )
-			break
-		case 1: // Mod
-			player.GiveWeapon(weapon,mods)
-			//print("Gave modded weapon")
-			break
-		default:
-			break
-	}
-}
-
 void function BecomesGrunt_Random( entity player )
 {
-	int classNum = RandomInt(7)
+	int classNum = RandomInt(8)
 	BecomesGrunt_Class( player, classNum )
 }
 
@@ -972,6 +1384,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		string pMods = "Grunt"
 		bool pilotMelee = false
 		string pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
+		currentClass[player] = classNum
 		switch( classNum )
 		{
 			case 0: //Rifleman
@@ -985,7 +1398,14 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				}
 				SendHudMessage(player, "Spawning as Rifleman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
-				RandomMods(player,weapon,["hcog"])
+
+				if ( classscore0[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon(weapon, ["hcog","pas_fast_reload"])
+				else if ( classscore0[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+					player.GiveWeapon(weapon, ["hcog"])
+				else
+					player.GiveWeapon(weapon)
+				
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
@@ -1000,14 +1420,24 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				}
 				SendHudMessage(player, "Spawning as Communications",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				string weapon = CSMG[ RandomInt( CSMG.len() ) ]
-				if (weapon != "mp_weapon_alternator_smg")
+
+				if ( classscore1[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
 				{
-					RandomMods(player,weapon,["holosight"])
+					if (weapon != "mp_weapon_alternator_smg")
+						player.GiveWeapon(weapon, ["holosight","pas_run_and_gun"] )
+					else
+						player.GiveWeapon(weapon, ["hcog","pas_run_and_gun"] )
+				}
+				else if ( classscore1[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+				{
+					if (weapon != "mp_weapon_alternator_smg")
+						player.GiveWeapon(weapon, ["holosight"] )
+					else
+						player.GiveWeapon(weapon, ["hcog"] )
 				}
 				else
-				{
-					RandomMods(player,weapon,["hcog"])
-				}
+					player.GiveWeapon(weapon)
+
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
@@ -1021,7 +1451,14 @@ void function BecomesGrunt_Class( entity player, int classNum )
 					pModel = "models/humans/grunts/mlt_grunt_shotgun.mdl"
 				}
 				SendHudMessage(player, "Spawning as Support",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				RandomMods(player,"mp_weapon_shotgun",["extended_ammo"])
+
+				if ( classscore2[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+					player.GiveWeapon("mp_weapon_shotgun", ["extended_ammo","pas_fast_swap"] )
+				else if ( classscore2[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+					player.GiveWeapon("mp_weapon_shotgun", ["extended_ammo"] )
+				else
+					player.GiveWeapon("mp_weapon_shotgun")
+
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
@@ -1034,12 +1471,41 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				{
 					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
 				}
-				RandomMods(player, "mp_weapon_g2", ["redline_sight"])
+
+				if ( classscore3[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_g2", ["redline_sight","pas_fast_ads"])
+				else if ( classscore3[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_g2", ["redline_sight"])
+				else
+					player.GiveWeapon("mp_weapon_g2")
+
 				SendHudMessage(player, "Spawning as Marksman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
-			case 4: //Heavy
+			case 4: // Sniper
+				if( player.GetTeam() == TEAM_IMC )
+				{
+					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
+				}
+
+				if ( classscore4[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_dmr", ["scope_4x","extended_ammo"])
+				else if ( classscore4[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_dmr", ["scope_4x"])
+				else
+					player.GiveWeapon("mp_weapon_dmr")
+
+				SendHudMessage(player, "Spawning as Sniper",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitan = "mp_weapon_rocket_launcher"
+				antiTitanTrue = true
+				break
+			case 5: //Heavy
 				if( player.GetTeam() == TEAM_IMC )
 				{
 					pModel = "models/humans/grunts/imc_grunt_lmg.mdl"
@@ -1050,116 +1516,136 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				}
 				SendHudMessage(player, "Spawning as Heavy",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
-				secondary = "mp_weapon_wingman"
-				if (weapon != "mp_weapon_smr")
+
+				if ( classscore5[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
 				{
-					RandomMods(player,weapon,["redline_sight"])
+					if (weapon != "mp_weapon_smr")
+						player.GiveWeapon(weapon, ["redline_sight","pas_fast_reload"] )
+					else
+						player.GiveWeapon(weapon, ["pas_fast_reload"] )
+				}
+				else if ( classscore5[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+				{
+					if (weapon != "mp_weapon_smr")
+						player.GiveWeapon(weapon, ["redline_sight"])
+					else
+						player.GiveWeapon(weapon)
 				}
 				else
-				{
-					player.GiveWeapon("mp_weapon_smr")
-				}
+					player.GiveWeapon(weapon)
+
+				secondary = "mp_weapon_wingman"
 				player.GiveOffhandWeapon( "mp_weapon_satchel", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitan = "mp_weapon_rocket_launcher"
 				antiTitanTrue = true
 				break
-			case 5: //Captain
+			case 6: //Captain
 				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
 				SendHudMessage(player, "Spawning as Shield Captain",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				RandomMods(player,"mp_weapon_lmg",["aog"])
+
+				if ( classscore6[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_lmg", ["aog","extended_ammo"])
+				else if ( classscore6[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_lmg", ["aog"])
+				else
+					player.GiveWeapon("mp_weapon_lmg")
+
 				secondary = "mp_weapon_wingman"
 				player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				thread ActivatePersonalShield( player )
 				pMods = "Captain"
 				break
-			case 6: //Specialist
+			case 7: //Specialist
 				pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
 				SendHudMessage(player, "Spawning as Specialist",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				secondary = "mp_weapon_shotgun_pistol"
 				player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
-				player.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ])
+				string weapon = CSPECIAL[ RandomInt( CSPECIAL.len() ) ]
+				
+				if ( classscore7[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+					player.GiveWeapon(weapon, ["pas_fast_reload","pas_fast_swap"] )
+				else if ( classscore7[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+					player.GiveWeapon(weapon, ["pas_fast_swap"] )
+				else
+					player.GiveWeapon(weapon)
+
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_mgl"
 				pMods = "Specialist"
-				if ( specialistSpawn[player] == false )
-				{
-					specialistSpawn[player] = true
-				}
 				break
-			case 7: //Spectre
+			case 8: //Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
 				SendHudMessage(player, "Spawning as Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				RandomMods(player,"mp_weapon_hemlok_smg",["holosight"])
+
+				if ( classscore8[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_hemlok_smg", ["holosight","pas_fast_reload"])
+				else if ( classscore8[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_hemlok_smg", ["holosight"])
+				else
+					player.GiveWeapon("mp_weapon_hemlok_smg")
+				
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				pMods = "Spectre"
-				if ( spectreSpawn[player] == false )
-				{
-					spectreSpawn[player] = true
-				}
 				break
-			case 8: //Blast Spectre
+			case 9: //Blast Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
 				SendHudMessage(player, "Spawning as Blast Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				RandomMods(player,"mp_weapon_lstar",["threat_scope"])
+
+				if ( classscore9[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon("mp_weapon_lstar", ["threat_scope"])
+				else
+					player.GiveWeapon("mp_weapon_lstar")
+
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_SPECIAL, ["spectre_bomb"] )
 				secondary = "mp_weapon_wingman"
 				antiTitanTrue = false
 				pMods = "Stalker"
 				break
-			case 9: //Sniper Spectre
+			case 10: //Sniper Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
 				SendHudMessage(player, "Spawning as Sniper Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				string weapon = CSNIPER[ RandomInt( CSNIPER.len() ) ]
-				if (weapon == "mp_weapon_doubletake" )
+
+				if ( classscore10[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
 				{
-					player.GiveWeapon( weapon, [ "burn_mod_doubletake" ] ) // DoubleTake
+					if (weapon == "mp_weapon_doubletake" )
+					{
+						player.GiveWeapon( weapon, [ "burn_mod_doubletake","pas_fast_ads" ] ) // DoubleTake
+					}
+					else if (weapon == "mp_weapon_sniper" )
+					{
+						player.GiveWeapon( weapon, ["burn_mod_sniper","pas_fast_ads" ] ) // Kraber
+					}
 				}
-				else if (weapon == "mp_weapon_sniper" )
+				else if ( classscore10[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
 				{
-					player.GiveWeapon( weapon, ["burn_mod_sniper"] ) // Kraber
+					player.GiveWeapon( weapon, [ "pas_fast_ads" ] )
 				}
 				else
 				{
-					player.GiveWeapon( weapon )
+					player.GiveWeapon( "mp_weapon_doubletake", ["iron_zoom"] )
 				}
+
+
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_defender"
 				pMods = "Spectre"
 				break
-			case 10: //Sentry Tech
+			case 11: //Sentry Tech
 				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
-				array<string> weaponMods = []
-				int random1 = RandomInt(2)
-				int random2 = RandomInt(2)
 				SendHudMessage(player, "Spawning as Sentry Technician",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				if (random1 == 1)
-				{
-					weaponMods = ["extended_ammo"]
-				}
-				if (random2 == 1)
-				{
-					if (random1 == 1)
-					{
-						weaponMods = ["extended_ammo", "pas_fast_reload"]
-					}
-					else
-					{
-						weaponMods = ["pas_fast_reload"]
-					}
-				}
-				if (weaponMods == [])
-				{
-					player.GiveWeapon( "mp_weapon_pulse_lmg" )
-				}
+				if ( classscore11[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+					player.GiveWeapon("mp_weapon_pulse_lmg", ["extended_ammo", "pas_fast_reload"])
+				else if ( classscore11[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ))
+					player.GiveWeapon("mp_weapon_pulse_lmg", ["extended_ammo"])
 				else
-				{
-					player.GiveWeapon( "mp_weapon_pulse_lmg", weaponMods )
-				}
+					player.GiveWeapon("mp_weapon_pulse_lmg")
+
 				secondary = "mp_weapon_autopistol"
 				player.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				player.GiveOffhandWeapon( "mp_ability_turretweapon", OFFHAND_SPECIAL, ["sentry_tech_grunt_mode","burnmeter_ap_turret_weapon"] )
@@ -1167,42 +1653,24 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				pMods = "Tech"
 				break
 
-			case 11: //Spectre Leader
+			case 12: //Spectre Leader
 				pModel = "models/robots/spectre/imc_spectre.mdl"
 				SendHudMessage(player, "Spawning as Spectre Leader",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
-				array<string> weaponMods = []
-				int random1 = RandomInt(2)
-				int random2 = RandomInt(2)
-				if (random1 == 1)
-				{
-					weaponMods = ["extended_ammo"]
-				}
-				if (random2 == 1)
-				{
-					if (random1 == 1)
-					{
-						weaponMods = ["extended_ammo", "threat_scope"]
-					}
-					else
-					{
-						weaponMods = ["threat_scope"]
-					}
-				}
-				if (weaponMods == [])
-				{
-					player.GiveWeapon( "mp_weapon_esaw" )
-				}
+
+				if ( classscore12[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+					player.GiveWeapon("mp_weapon_esaw", ["extended_ammo", "threat_scope"])
+				else if ( classscore12[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+					player.GiveWeapon("mp_weapon_esaw", ["threat_scope"])
 				else
-				{
-					player.GiveWeapon( "mp_weapon_esaw", weaponMods )
-				}
+					player.GiveWeapon("mp_weapon_esaw")
+
 				secondary = "mp_weapon_wingman"
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE ) // Regenerating Grenade
 				antiTitanTrue = true
 				antiTitan = "mp_weapon_arc_launcher"
 				pMods = "Spectre Leader"
 				break
-			case 12: //Pilot
+			case 13: //Pilot
 				pModel = "models/humans/pilots/pilot_light_core.mdl"
 				SendHudMessage(player, "Respawning as Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				player.GiveWeapon("mp_weapon_rspn101_og", ["hcog", "tactical_cdr_on_kill","burn_mod_rspn101"])
@@ -1214,25 +1682,50 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				antiTitan = "mp_weapon_arc_launcher"
 				pMods = "Pilot"
 				string playerName = player.GetPlayerName()
-				print(playerName)
-				Chat_ServerBroadcast(playerName + " has become a pilot!",true)
+				Chat_ServerBroadcast(playerName + " has become a Pilot!",true)
+				break
+			case 14: // Next-Gen Pilot
+				pModel = "models/humans/pilots/pilot_medium_stalker_m.mdl"
+				SendHudMessage(player, "Respawning as Next-Gen Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				player.GiveWeapon("mp_weapon_rspn101_og", ["hcog","extended_ammo","pas_run_and_gun", "tactical_cdr_on_kill","burn_mod_rspn101"])
+				secondary = "mp_weapon_smart_pistol"
+				player.TakeOffhandWeapon(0)
+				player.TakeOffhandWeapon(1)
+				player.TakeOffhandWeapon(2)
+				player.TakeOffhandWeapon(4)
+				player.GiveOffhandWeapon( "mp_weapon_grenade_gravity", 0)
+				player.GiveOffhandWeapon( "mp_ability_heal", 1)
+				player.GiveOffhandWeapon( "mp_ability_holopilot", 2)
+				player.GiveOffhandWeapon( "mp_weapon_grenade_sonar", 4)
+				pilotMelee = true
+				antiTitanTrue = true
+				antiTitan = "mp_weapon_arc_launcher"
+				pMods = "Pilot"
+				string playerName = player.GetPlayerName()
+				Chat_ServerBroadcast(playerName + " has become a Next-Gen Pilot!",true)
 				break
 			default:
 				pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
 				SendHudMessage(player, "Invalid Class - Spawning as Rifleman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				print("Invalid Class Number: Recieved " + string(classNum))
 				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
-				RandomMods(player,weapon,["hcog"])
+				player.GiveWeapon(weapon)
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
 		}
-		player.GiveWeapon( secondary )
+		if ( classNum != 14 )
+			player.GiveWeapon( secondary )
+		else
+			player.GiveWeapon( "mp_weapon_smart_pistol", ["extended_ammo","pas_run_and_gun","tactical_cdr_on_kill"])
 		if (antiTitanTrue == true)
 		{
 			if (antiTitan == "mp_weapon_arc_launcher" && pMods == "Pilot")
 			{
-				player.GiveWeapon( antiTitan, ["at_unlimited_ammo"] )
+				if ( classNum == 14)
+					player.GiveWeapon( antiTitan, ["pas_fast_reload","pas_fast_ads","tactical_cdr_on_kill","at_unlimited_ammo","burn_mod_arc_launcher"] )
+				else
+					player.GiveWeapon( antiTitan, ["at_unlimited_ammo"] )
 			}
 			else
 			{
@@ -1241,7 +1734,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		}
 		if (pilotMelee == true)
 		{
-			player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE)
+			player.GiveOffhandWeapon( "melee_pilot_kunai", OFFHAND_MELEE)
 		}
 		else
 		{
@@ -1257,7 +1750,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		}
 		else if (pMods == "Stalker")
 		{
-			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["make_mechanical", "enable_double", "stalker_healthregen", "disable_wallrun", "less_powerful_gilde", "stalker_speedmod","captain_health","pas_stealth_movement","stalker_slide"])
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["make_mechanical", "stalker_healthregen", "disable_wallrun", "less_powerful_gilde", "stalker_speedmod","captain_health","pas_stealth_movement","stalker_slide"])
 		}
 		else if (pMods == "Pilot")
 		{

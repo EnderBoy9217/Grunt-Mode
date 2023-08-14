@@ -239,7 +239,7 @@ WeaponData
 			"explosion_shake_amplitude"						"600"
 			"deploy_time"									"0"
 			"explosion_damage"								"2000"
-			"explosion_damage_heavy_armor"					"20000"
+			"explosion_damage_heavy_armor"					"8000"
 			"toss_pullout_time"								"0.1"
 			"toss_time"										"0.1"
 			"explosion_shake_radius"						"850"

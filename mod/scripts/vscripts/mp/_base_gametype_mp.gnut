@@ -242,19 +242,6 @@ void function CodeCallback_OnPlayerKilled( entity player, var damageInfo )
 	thread PostDeathThread_MP( player, damageInfo )
 }
 
-function calculateScore( entity player )
-{
-	int score1 = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) + givenScore[player]
-	int score2 = score1 - usedScore[player]
-	return score2
-}
-
-void function SendScoreInfo( entity player )
-{
-	int score = expect int(calculateScore( player ))
-	NSSendPopUpMessageToPlayer( player, "You have " + score + " points")
-}
-
 void function PostDeathThread_MP( entity player, var damageInfo ) // based on gametype_sp: postdeaththread_sp
 {
 	if ( player.s.inPostDeath )
@@ -299,7 +286,7 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
 	int methodOfDeath = DamageInfo_GetDamageSourceIdentifier( damageInfo )
 
 	table<int, bool> alreadyAssisted
-	if ( IsValid( attacker ) )
+	if ( IsValid( attacker ) && attacker.IsPlayer())
 	{
 		foreach( DamageHistoryStruct attackerInfo in player.e.recentDamageHistory )
 		{
@@ -316,7 +303,6 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
                 if ( GameRules_GetGameMode() == "aitdm")
                 {
                     int score = 2
-                    int initialScore = givenScore[attacker]
                     if( player.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Player Shield Captain
                         score = 3
 
@@ -328,9 +314,11 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
 
                     if ( player.GetModelName() == $"models/humans/pilots/pilot_medium_geist_m.mdl") // Player Pilot
                         score = 8
-
-                    givenScore[attacker] = givenScore[attacker] + score
-                    print(attacker + " gained " + score + " score from an assist, they used to have " + initialScore + " points but now they have " + givenScore[attacker] )
+					
+					attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
+					attacker.SetPlayerNetInt( "AT_bonusPoints", attacker.GetPlayerGameStat( PGS_ASSAULT_SCORE ) )
+					SendScoreInfo( attacker )
+					thread addClassScore( attacker, score )
                 }
 			}
 		}

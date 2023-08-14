@@ -3,6 +3,8 @@ global function RespawnShip_Init
 
 global function RespawnInDropShip
 
+global function checkDropShipStatus
+
 enum eDropshipState
 {
 	Idle,
@@ -50,13 +52,50 @@ const array<string> DROPSHIP_EXIT_ANIMS = [
 	"pt_ds_coop_side_intro_gen_exit_D"
 ]
 
+const array<string> DROPSHIP_VALID_MAPS = [
+	"mp_angel_city",
+	"mp_black_water_canal",
+	"mp_forwardbase_kodai",
+	"mp_homestead",
+	"mp_boomtown", //re-enabling after oob check
+	"mp_glitch",
+	"mp_colony02", //These are not FD maps but there is no place to get stuck in, spawns may still be random tho
+	"mp_eden" //There are a couple of walls here so watch for bug reports
+]
+
 void function RespawnShip_Init()
 {
     AddCallback_OnPlayerRespawned( RespawnInDropShip )
 }
 
+bool function CheckValidMap( entity player )
+{
+	string currentMap = GetMapName()
+	print(currentMap)
+	foreach (map in DROPSHIP_VALID_MAPS) {
+		if (map == currentMap) {
+			print("Allowing dropship")
+			return(true)
+		}
+	}
+	print("Disabling Dropship")
+	return(false)
+}
+
 void function RespawnInDropShip( entity player )
 {
+	if ( CheckValidMap( player ) == false )
+	{
+		print("Spawning from droppod because map has glitched spawns")
+		SpawnFromDroppod( player ) //Spawn in droppod instead
+		return //cancel rest of the script
+	}
+	if (player.GetModelName() == $"models/robots/spectre/imc_spectre.mdl")
+	{
+		print("Spawning from droppod because player is a spectre model")
+		SpawnFromDroppod( player ) //Spawn in droppod instead
+		return //cancel rest of the script
+	}
     print( "triggered dropshipspawn" )
 
 	//if( GetCurrentPlaylistVarInt("dropship_spawn", 0) == 0 )
@@ -68,7 +107,7 @@ void function RespawnInDropShip( entity player )
 	player.SetInvulnerable()
 
     bool shouldCreateNewShip = false
-    if( avaliableRespawnShips.len() == 0 )
+    if( avaliableRespawnShips.len() == 0 || player.GetModelName() == $"models/humans/pilots/pilot_medium_geist_m.mdl")
         shouldCreateNewShip = true
     else
     {
@@ -77,20 +116,21 @@ void function RespawnInDropShip( entity player )
         {
             if( !IsValid( dropship ) )
                 continue
-			if( dropship.GetTeam() != player.GetTeam() )
-				continue
-            if( respawnShipTable[dropship].playersInDropship.len() < 4 )
+			else if( dropship.GetTeam() != player.GetTeam() )
+				shouldCreateNewShip = true
+            else if( respawnShipTable[dropship].playersInDropship.len() < 4 )
+				shouldCreateNewShip = false
                 atLeastOneShipAvaliable = true
         }
-        if( !atLeastOneShipAvaliable )
-            shouldCreateNewShip = true
+        if( !atLeastOneShipAvaliable && shouldCreateNewShip == false) //Existing dropship BUT it is full/Invalid and not just wrong team
+			SpawnFromDroppod( player )
     }
 
     entity dropship
 
 	if( shouldCreateNewShip )
 	{
-        dropship = CreateRespawnShip( player.GetTeam() )
+        dropship = CreateRespawnShip( player.GetTeam(), player )
 		thread RespawnShipThink( dropship )
 	}
     else
@@ -106,7 +146,7 @@ void function RespawnInDropShip( entity player )
 
 	if( !IsValid( dropship ) )
 	{
-		dropship = CreateRespawnShip( player.GetTeam() )
+		dropship = CreateRespawnShip( player.GetTeam(), player )
 		thread RespawnShipThink( dropship )
 	}
 
@@ -166,10 +206,47 @@ void function TrackPlayerLifeStat( entity player, entity dropship )
 	}
 }
 
-entity function CreateRespawnShip( int team )
+bool function checkDropShipStatus( entity player )
 {
-    array< entity > spawnPoint = SpawnPoints_GetDropPod()
+	bool atLeastOneShipAvaliable = false
+	if (player.GetModelName() == $"models/robots/spectre/imc_spectre.mdl")
+	{
+		return(false)//cancel rest of the script
+	}
+	if( avaliableRespawnShips.len() != 0 )
+	{
+		foreach( entity dropship in avaliableRespawnShips )
+		{
+			if( !IsValid( dropship ) )
+				continue
+			if( dropship.GetTeam() != player.GetTeam() )
+				continue
+			if( respawnShipTable[dropship].playersInDropship.len() < 4 )
+				atLeastOneShipAvaliable = true
+		}
+	}
+	print("Dropship available?")
+	print(atLeastOneShipAvaliable)
+	return(atLeastOneShipAvaliable)
+}
+
+entity function getValidNode( int team, entity player )
+{
+	array< entity > spawnPoint = SpawnPoints_GetDropPod()
+	for ( int i = 0; i < 20; i++ ) //20 tries before it gives something random
+		{
+			
+			entity node = spawnPoint[ GetSpawnPointIndex( spawnPoint, team ) ]
+
+			if ( PlayerCanTeleportHere( player, node.GetOrigin() + < 0,0,100 >) && IsPointOutOfBounds( node.GetOrigin() + < 0,0,100 > ) == false)
+				return node
+		}
 	entity node = spawnPoint[ GetSpawnPointIndex( spawnPoint, team ) ]
+}
+
+entity function CreateRespawnShip( int team, entity player )
+{
+	entity node = getValidNode( team, player )
 	entity dropship = CreateDropship( team, node.GetOrigin() + < 0,0,100 >, < 0,RandomInt( 360 ), 0 > )
 	dropship.SetMaxHealth( 25000 )
 	dropship.SetHealth( 25000 )
@@ -318,7 +395,8 @@ string function RespawnShipGetAnimation()
 	case "mp_wargames":
 		return "dropship_coop_respawn_wargames"
 	case "mp_digsite":
-		return "dropship_coop_respawn_digsite"
+		return "dropship_coop_respawn_digsite" //
+	
 	}
 	return "dropship_coop_respawn"
 }

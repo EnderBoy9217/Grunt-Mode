@@ -1,0 +1,11 @@
+WeaponData
+{
+	Mods
+	{
+		iron_zoom
+		{
+			"zoom_toggle_lerp_time"							"0.2"
+			"zoom_toggle_fov"								"7"
+		}
+    }
+}

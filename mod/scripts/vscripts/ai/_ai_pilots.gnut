@@ -680,7 +680,8 @@ entity function NpcTitanBecomesPilot( entity titan )
 	entity titanSoul = titan.GetTitanSoul()
 	titanSoul.soul.seatedNpcPilot.isValid = false
 
-	string weapon 			= titanSoul.soul.seatedNpcPilot.weapon
+	array<string> pilotWeapons = [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og"]
+	string weapon 			= pilotWeapons[ RandomInt( pilotWeapons.len() ) ]
 	string squadName 		= titanSoul.soul.seatedNpcPilot.squadName
 	asset model 			= titanSoul.soul.seatedNpcPilot.modelAsset
 	string title 			= titanSoul.soul.seatedNpcPilot.title

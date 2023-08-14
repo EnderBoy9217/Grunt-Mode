@@ -24,10 +24,25 @@ void function DropPodSpawn1Player_Init()
 
 void function SpawnFromDroppod( entity player )
 {
-	if( GetGameState() == eGameState.Playing )
+	if ( GetGameState() == eGameState.Playing )
 	{
 		thread SpawnFromDroppod_Threaded( player )
 	}
+}
+
+entity function getValidNode( entity player )
+{
+	int team = player.GetTeam()
+	array< entity > spawnPoint = SpawnPoints_GetDropPod()
+	for ( int i = 0; i < 20; i++ ) //20 tries before it gives something random
+		{
+			
+			entity node = spawnPoint[ GetSpawnPointIndex( spawnPoint, team ) ]
+
+			if ( PlayerCanTeleportHere( player, node.GetOrigin() + < 0,0,100 >) && IsPointOutOfBounds( node.GetOrigin() + < 0,0,100 > ) == false)
+				return node
+		}
+	entity node = spawnPoint[ GetSpawnPointIndex( spawnPoint, team ) ]
 }
 
 void function SpawnFromDroppod_Threaded( entity player )
@@ -42,7 +57,7 @@ void function SpawnFromDroppod_Threaded( entity player )
 			podSpawn = SpawnPoints_GetPilot().getrandom()
 		*/
 		array< entity > points = SpawnPoints_GetDropPod()
-		entity node = points[ GetSpawnPointIndex( points, player.GetTeam() ) ]
+		entity node = getValidNode( player )
 		
 		SpawnPlayerInDropPod( player, node.GetOrigin(), node.GetAngles(), 15 )
 	}
@@ -97,6 +112,13 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 		
 		//WaitFrame()
 		if( IsValid( player ) && GamePlaying() )
+		{
+			player.ClearParent()
+			player.ClearViewEntity()
+			player.UnfreezeControlsOnServer()
+			RemoveCinematicFlag( player, CE_FLAG_HIDE_MAIN_HUD )
+		}
+		else if ( IsValid( player ) && GetGameState() == eGameState.Epilogue)
 		{
 			player.ClearParent()
 			player.ClearViewEntity()

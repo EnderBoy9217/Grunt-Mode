@@ -24,8 +24,17 @@ global function AiGameModes_SpawnReaperDorpsWeapons
 
 global function GetValidIntroDropShipSpawn
 
+global function SetUpNPCWeapons
+global function SetUpSpecialistGrunt
 
 const INTRO_DROPSHIP_CUTOFF = 2000
+
+const array<string> SPECIALIST_VALID_DRONETYPES = 
+[ 
+	"npc_drone_beam", 
+	"npc_drone_rocket", 
+	"npc_drone_plasma" 
+]
 
 struct
 {
@@ -117,10 +126,29 @@ void function AiGameModes_SpawnDropShip( vector pos, vector rot, int team, int c
 
 	array< entity > guys = GetNPCArrayBySquad( squadName )
 
+	bool isLeader = true
 	foreach ( guy in guys )
 	{
-		SetUpNPCWeapons( guy )
-		guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		if ( isLeader == true ) // Always has 1 leader per dropship
+		{
+			if ( RandomInt(2) == 1)
+			{
+				print("Spawning Shield Captain in dropship")
+				SetUpSpecialistGrunt( guy, "npc_soldier_shield_captain" )
+			}
+			else
+			{
+				print("Spawning Specialist in dropship")
+				SetUpSpecialistGrunt( guy, "npc_soldier_specialist" )
+			}
+			isLeader = false
+		}
+		else
+		{
+			SetUpNPCWeapons( guy )
+			guy.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		}
+
 	}
 
 	if ( squadHandler != null )
@@ -133,6 +161,111 @@ function rndint(max) { //100% not copy/pasted I swear
     return roll.tointeger();
 }
 
+//Modified Specialist and Shield Captain code from VoyageDB 2.7.3
+void function SetUpSpecialistGrunt( entity npc, string aiSet )
+{
+	bool alreadySpecialist = false
+	// hardcoded here..
+	if (npc.GetModelName() == $"models/humans/grunts/imc_grunt_smg.mdl" && npc.GetTeam() == TEAM_MILITIA)
+		alreadySpecialist = true
+	if (npc.GetModelName() == $"models/humans/grunts/mlt_grunt_smg.mdl" && npc.GetTeam() == TEAM_IMC)
+		alreadySpecialist = true
+	if ( npc.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl" )
+		alreadySpecialist = true
+	if ( alreadySpecialist == false ) //failsafe/double check
+	{
+		int team = npc.GetTeam()
+		switch( aiSet )
+		{
+			case "npc_soldier_specialist": // drone summoner grunt
+				if (npc.GetTeam() == TEAM_MILITIA)
+				{
+					npc.SetModel( $"models/humans/grunts/imc_grunt_smg.mdl" )
+				}
+				else
+				{
+					npc.SetModel( $"models/humans/grunts/mlt_grunt_smg.mdl")
+				}
+				npc.SetTitle( "#NPC_SPECIALIST" )
+				npc.SetMaxHealth( 250 )
+				npc.SetHealth( 250 )
+				TakeAllWeapons( npc )
+				npc.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE )
+				array<string> CSPECIAL = [ "mp_weapon_hemlok_smg", "mp_weapon_mastiff", "mp_weapon_shotgun_pistol", "mp_weapon_mgl" ]
+				if ( RandomInt(2) == 1) //Randomize attachment
+				{
+					npc.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ], ["pas_fast_reload"] )
+					npc.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ], ["pas_fast_reload"] )
+				}
+				else
+				{
+					npc.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ] )
+					npc.GiveWeapon(CSPECIAL[ RandomInt( CSPECIAL.len() ) ] )
+				}
+
+				// modified signal in _ai_drone.gnut, vanilla won't register it
+				npc.Signal( "ForceStopDroneSpawn" ) // stop it's drone spawn think
+				
+				string droneType = SPECIALIST_VALID_DRONETYPES[ RandomInt( SPECIALIST_VALID_DRONETYPES.len() ) ]
+				thread DroneGruntThink( npc, droneType ) // force set it again
+				break
+
+			case "npc_soldier_shield_captain": // shield captain
+				npc.SetModel( $"models/humans/grunts/imc_grunt_shield_captain.mdl" )
+				npc.SetTitle( "#NPC_SOLDIER_SHIELD_CAPTAIN" )
+				npc.SetMaxHealth( 500 )
+				npc.SetHealth( 500 )
+				TakeAllWeapons( npc )
+				npc.GiveOffhandWeapon( "mp_weapon_grenade_electric_smoke", OFFHAND_ORDNANCE )
+				if ( RandomInt(2) == 1) //Randomize attachment
+				{
+					npc.GiveWeapon( "mp_weapon_lmg", ["aog"] )
+				}
+				else
+				{
+					npc.GiveWeapon( "mp_weapon_lmg" )
+				}
+				npc.GiveWeapon( "mp_weapon_wingman" )
+				npc.Signal( "ForceStopShield" ) // stop it's shield
+				// force set them again here
+				npc.DisableNPCFlag( NPC_ALLOW_FLEE | NPC_ALLOW_HAND_SIGNALS | NPC_USE_SHOOTING_COVER | NPC_CROUCH_COMBAT )
+				thread WaitForShieldCaptainDrop( npc ) // start shield after being clear parented
+				break
+			case "npc_spectre_leader": // Spectre Leader
+				npc.SetTitle( "#DAILYCHALLENGE_FIRST_STRIKES") // Striker
+				npc.SetMaxHealth( 500 )
+				npc.SetHealth( 500 )
+				TakeAllWeapons( npc )
+				if ( RandomInt(2) == 1) //Randomize attachment
+				{
+					npc.GiveWeapon( "mp_weapon_esaw", ["extended_ammo"] )
+				}
+				else
+				{
+					npc.GiveWeapon( "mp_weapon_esaw" )
+				}
+		}
+	}
+	else
+	{
+		print("Specialist Grunt Cancelled because it was already a specialist")
+	}
+}
+
+void function WaitForShieldCaptainDrop( entity npc )
+{
+	npc.EndSignal( "OnDestroy" )
+	npc.EndSignal( "OnDeath" )
+
+	WaitFrame() // wait for npc being set into dropship
+	while( IsValid( npc.GetParent() ) )
+		WaitFrame()
+
+	thread ActivatePersonalShield( npc )
+}
+//end
+
+
 void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string content, void functionref( array<entity> guys ) squadHandler = null, int flags = 0 )
 {
 	entity pod = CreateDropPod( pos, <0,0,0> )
@@ -143,17 +276,58 @@ void function AiGameModes_SpawnDropPod( vector pos, vector rot, int team, string
 
 	string squadName = MakeSquadName( team, UniqueString( "" ) )
 	array<entity> guys
+
+	bool isLeader = true
 	for ( int i = 0; i < 4 ;i++ )
 	{
 		entity npc = CreateNPC( content, team, pos,<0,0,0> )
 		DispatchSpawn( npc )
 		SetSquad( npc, squadName )
 
+		if ( npc.GetClassName()  == "npc_soldier" && isLeader == true ) // 1/3 chance of each leader, 1/3 chance of no leader
+		{
+			int randomLeader = RandomInt(3)
+			if ( randomLeader == 1)
+			{
+				printt("Spawning Shield Captain in droppod")
+				SetUpSpecialistGrunt( npc, "npc_soldier_shield_captain" )
+			}
+			else if ( randomLeader == 2)
+			{
+				printt("Spawning Specialist in droppod")
+				SetUpSpecialistGrunt( npc, "npc_soldier_specialist" )
+			}
+			else
+			{
+				printt("Not spawning any special unit in droppod")
+				SetUpNPCWeapons( npc )
+				npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+			}
+			isLeader = false
+		}
+		else if ( npc.GetClassName()  == "npc_spectre" && isLeader == true )
+		{
+			if ( RandomInt(2) == 1)
+			{
+				printt("Spawning Spectre Leader in droppod")
+				SetUpSpecialistGrunt( npc, "npc_spectre_leader" )
+			}
+			else
+			{
+				printt("Not spawning any special unit in spectre droppod")
+				SetUpNPCWeapons( npc )
+				npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+			}
+			isLeader = false
+		}
+		else
+		{
 		SetUpNPCWeapons( npc )
+		npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
+		}
 
 		npc.SetParent( pod, "ATTACH", true )
 
-		npc.EnableNPCFlag( NPC_ALLOW_PATROL | NPC_ALLOW_INVESTIGATE | NPC_ALLOW_HAND_SIGNALS | NPC_ALLOW_FLEE )
 		guys.append( npc )
 	}
 
