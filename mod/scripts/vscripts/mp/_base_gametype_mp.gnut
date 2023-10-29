@@ -300,7 +300,7 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
 				Remote_CallFunction_NonReplay( attackerInfo.attacker, "ServerCallback_SetAssistInformation", attackerInfo.damageSourceId, attacker.GetEncodedEHandle(), player.GetEncodedEHandle(), attackerInfo.time )
 				AddPlayerScore( attackerInfo.attacker, "PilotAssist" )
 				attackerInfo.attacker.AddToPlayerGameStat( PGS_ASSISTS, 1 )
-                if ( GameRules_GetGameMode() == "aitdm")
+                if ( isGruntMode )
                 {
                     int score = 2
                     if( player.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Player Shield Captain
@@ -314,9 +314,10 @@ void function PostDeathThread_MP( entity player, var damageInfo ) // based on ga
 
                     if ( player.GetModelName() == $"models/humans/pilots/pilot_medium_geist_m.mdl") // Player Pilot
                         score = 8
-					
+
 					attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
-					attacker.SetPlayerNetInt( "AT_bonusPoints", attacker.GetPlayerGameStat( PGS_ASSAULT_SCORE ) )
+					if( GameRules_GetGameMode() == "aitdm" )
+						attacker.SetPlayerNetInt( "AT_bonusPoints", attacker.GetPlayerGameStat( PGS_ASSAULT_SCORE ) )
 					SendScoreInfo( attacker )
 					thread addClassScore( attacker, score )
                 }

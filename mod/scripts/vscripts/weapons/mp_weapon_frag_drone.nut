@@ -27,8 +27,16 @@ void function droneTimerResetWait( entity player )
 {
 	#if SERVER
 	wait 20
-	placedDrones[player] = placedDrones[player] - 1
-	NSSendInfoMessageToPlayer(player, "Your drone is ready to redeploy")
+	if( IsValid( player ) )
+	{
+		placedDrones[player] = placedDrones[player] - 1
+		if( HasOffhandWeapon(player, "mp_weapon_frag_drone") )
+		{
+			player.TakeOffhandWeapon( OFFHAND_SPECIAL )
+			NSSendInfoMessageToPlayer(player, "Your drone is ready to redeploy")
+			player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
+		}
+	}
 	#endif
 	return
 }

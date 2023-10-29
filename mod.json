@@ -1,7 +1,7 @@
 {
 	"Name" : "Ender's Grunt Mode",
 	"Description" : "You're now a grunt, now including a class system",
-	"Version": "2.9.0",
+	"Version": "2.10.1",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
 	"ConVars": [
@@ -32,13 +32,13 @@
 		},
 		{
 			"Name": "GRTDM_MRVNS",
-			"DefaultValue": "1",
-			"HelpString": "The number of Marvins that can be deployed at once, per-team (default 1)"
+			"DefaultValue": "0",
+			"HelpString": "The number of Marvins that can be deployed at once, per-team (default 0)"
 		},
 		{
 			"Name": "GRTDM_GUNSHIPS",
-			"DefaultValue": "1",
-			"HelpString": "The number of Gunships that can be deployed at once, per-team (default 1)"
+			"DefaultValue": "0",
+			"HelpString": "The number of Gunships that can be deployed at once, per-team (default 0)"
 		},
 		{
 			"Name": "GRLEVEL_SPECTRES",
@@ -67,12 +67,12 @@
 		},
 		{
 			"Name": "CLASS_SNIPER_UNLOCK",
-			"DefaultValue": "40",
+			"DefaultValue": "30",
 			"HelpString": "The score you need to get as a Marksman to unlock the Sniper Class (default 30)"
 		},
 		{
 			"Name": "CLASS_SPECTRE_UNLOCK",
-			"DefaultValue": "50",
+			"DefaultValue": "25",
 			"HelpString": "The score you need to get as a grunt to unlock the Spectre class (default 50)"
 		},
 		{
@@ -82,7 +82,7 @@
 		},
 		{
 			"Name": "CLASS_SPECTRELEADER_UNLOCK",
-			"DefaultValue": "60",
+			"DefaultValue": "40",
 			"HelpString": "The score you need to get as a Spectre Class to unlock the Spectre Leader class (default 60)"
 		},
 		{
@@ -212,6 +212,10 @@
             "ServerCallback": {
                 "After": "BecomesGruntMode_Init"
             }
+		},
+		{
+			"Path": "/gamemodes/_gruntmode.gnut",
+			"RunOn": " SERVER && MP"
 		},
 		{
 			"Path": "/gruntmode/dropship_respawn.gnut",

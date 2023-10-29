@@ -40,7 +40,6 @@ struct
 {
 	table< string, array<string> > npcWeaponsTable // npcs have their default weapon in aisettings file
 } file
-
 //------------------------------------------------------
 
 void function AiGameModes_SetNPCWeapons( string npcClass, array<string> weapons )

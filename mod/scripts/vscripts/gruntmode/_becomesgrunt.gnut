@@ -59,6 +59,8 @@ int score = 0
 
 void function BecomesGruntMode_Init()
 {
+	isGruntMode = true
+	SetLoadoutGracePeriodEnabled( false )
 	PrecacheModel( $"models/humans/grunts/imc_grunt_shield_captain.mdl" )
 
 	AddCallback_OnClientConnected( OnClientConnected )
@@ -508,7 +510,7 @@ void function sendClassMessage( entity player, int classNum )
 			break
 	}
 	string cScoreText = "You have " + cClassScore[player] + " points with this class\n"
-	
+
 	switch( classNum )
 	{
 		case 0:
@@ -1067,7 +1069,7 @@ void function OnPlayerRespawned_Threaded( entity player )
 	}
 	else
 	{
-		int random = RandomInt(10) 
+		int random = RandomInt(10)
 		if ( random == 1 ) //10% chance to create a new dropship
 		{
 			RespawnInDropShip( player )
@@ -1099,7 +1101,7 @@ void function sendPingInfo( entity player )
 {
 	wait 16
 	print("Sending ping info")
-	NSSendInfoMessageToPlayer(player, "Hold your interact key to say a voiceline, or press interact to call out enemies" )
+	NSSendInfoMessageToPlayer(player, "Hold your %%USE%% key to say a voiceline, or press %%USE%% to call out enemies" )
 }
 
 void function sendScoreInfo( entity player )
@@ -1112,7 +1114,7 @@ void function sendCycleInfo( entity player )
 {
 	wait 1
 	print("Sending change info")
-	NSSendInfoMessageToPlayer(player, "Use WASD or Controller Bumpers while in the deployment screen to switch classes" )
+	NSSendInfoMessageToPlayer(player, "Use WASD, or Controller Bumpers while in the deployment screen to switch classes" )
 }
 
 void function sendRandomInfo( entity player )
@@ -1127,7 +1129,7 @@ void function sendRandomInfo( entity player )
 			infoText = "Focusing on a specific class can give you extra perks from playing it"
 			break
 		case 1:
-			infoText = "Hold your interact key to say a voiceline, or press interact to call out enemies"
+			infoText = "Hold your %%USE%% key to say a voiceline, or press %%USE%% to call out enemies"
 			break
 		case 2:
 			infoText = "Extra info on classes can be found in the deployment screen"
@@ -1382,6 +1384,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		bool antiTitanTrue = false
 		string antiTitan = "mp_weapon_rocket_launcher"
 		string pMods = "Grunt"
+		string popUpText = ""
 		bool pilotMelee = false
 		string pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
 		currentClass[player] = classNum
@@ -1396,7 +1399,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				{
 					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
 				}
-				SendHudMessage(player, "Spawning as Rifleman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Rifleman"
 				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
 
 				if ( classscore0[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
@@ -1405,7 +1408,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 					player.GiveWeapon(weapon, ["hcog"])
 				else
 					player.GiveWeapon(weapon)
-				
+
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
@@ -1418,7 +1421,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				{
 					pModel = "models/humans/grunts/mlt_grunt_smg.mdl"
 				}
-				SendHudMessage(player, "Spawning as Communications",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Communications"
 				string weapon = CSMG[ RandomInt( CSMG.len() ) ]
 
 				if ( classscore1[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
@@ -1450,7 +1453,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				{
 					pModel = "models/humans/grunts/mlt_grunt_shotgun.mdl"
 				}
-				SendHudMessage(player, "Spawning as Support",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Support"
 
 				if ( classscore2[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
 					player.GiveWeapon("mp_weapon_shotgun", ["extended_ammo","pas_fast_swap"] )
@@ -1479,7 +1482,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				else
 					player.GiveWeapon("mp_weapon_g2")
 
-				SendHudMessage(player, "Spawning as Marksman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Marksman"
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
@@ -1500,7 +1503,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				else
 					player.GiveWeapon("mp_weapon_dmr")
 
-				SendHudMessage(player, "Spawning as Sniper",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Sniper"
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitan = "mp_weapon_rocket_launcher"
 				antiTitanTrue = true
@@ -1514,7 +1517,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				{
 					pModel = "models/humans/grunts/mlt_grunt_lmg.mdl"
 				}
-				SendHudMessage(player, "Spawning as Heavy",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Heavy"
 				string weapon = CHEAVY[ RandomInt( CHEAVY.len() ) ]
 
 				if ( classscore5[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
@@ -1541,7 +1544,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 6: //Captain
 				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
-				SendHudMessage(player, "Spawning as Shield Captain",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Shield Captain"
 
 				if ( classscore6[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
 					player.GiveWeapon("mp_weapon_lmg", ["aog","extended_ammo"])
@@ -1558,12 +1561,12 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 7: //Specialist
 				pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
-				SendHudMessage(player, "Spawning as Specialist",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Specialist"
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				secondary = "mp_weapon_shotgun_pistol"
 				player.GiveOffhandWeapon( "mp_weapon_frag_drone", OFFHAND_SPECIAL, ["drone_spawner"] )
 				string weapon = CSPECIAL[ RandomInt( CSPECIAL.len() ) ]
-				
+
 				if ( classscore7[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
 					player.GiveWeapon(weapon, ["pas_fast_reload","pas_fast_swap"] )
 				else if ( classscore7[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
@@ -1577,7 +1580,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 8: //Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
-				SendHudMessage(player, "Spawning as Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Spectre"
 
 				if ( classscore8[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
 					player.GiveWeapon("mp_weapon_hemlok_smg", ["holosight","pas_fast_reload"])
@@ -1585,14 +1588,14 @@ void function BecomesGrunt_Class( entity player, int classNum )
 					player.GiveWeapon("mp_weapon_hemlok_smg", ["holosight"])
 				else
 					player.GiveWeapon("mp_weapon_hemlok_smg")
-				
+
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				pMods = "Spectre"
 				break
 			case 9: //Blast Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
-				SendHudMessage(player, "Spawning as Blast Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Blast Spectre"
 
 				if ( classscore9[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
 					player.GiveWeapon("mp_weapon_lstar", ["threat_scope"])
@@ -1607,7 +1610,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 10: //Sniper Spectre
 				pModel = "models/robots/spectre/imc_spectre.mdl"
-				SendHudMessage(player, "Spawning as Sniper Spectre",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Sniper Spectre"
 				string weapon = CSNIPER[ RandomInt( CSNIPER.len() ) ]
 
 				if ( classscore10[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
@@ -1627,7 +1630,10 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				}
 				else
 				{
-					player.GiveWeapon( "mp_weapon_doubletake", ["iron_zoom"] )
+					if ( CoinFlip() )
+						player.GiveWeapon( "mp_weapon_doubletake" )
+					else
+						player.GiveWeapon( "mp_weapon_sniper" )
 				}
 
 
@@ -1638,7 +1644,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 11: //Sentry Tech
 				pModel = "models/humans/grunts/imc_grunt_shield_captain.mdl"
-				SendHudMessage(player, "Spawning as Sentry Technician",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Sentry Technician"
 				if ( classscore11[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
 					player.GiveWeapon("mp_weapon_pulse_lmg", ["extended_ammo", "pas_fast_reload"])
 				else if ( classscore11[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ))
@@ -1655,7 +1661,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 
 			case 12: //Spectre Leader
 				pModel = "models/robots/spectre/imc_spectre.mdl"
-				SendHudMessage(player, "Spawning as Spectre Leader",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Spawning as Spectre Leader"
 
 				if ( classscore12[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
 					player.GiveWeapon("mp_weapon_esaw", ["extended_ammo", "threat_scope"])
@@ -1672,7 +1678,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 13: //Pilot
 				pModel = "models/humans/pilots/pilot_light_core.mdl"
-				SendHudMessage(player, "Respawning as Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Respawning as Pilot"
 				player.GiveWeapon("mp_weapon_rspn101_og", ["hcog", "tactical_cdr_on_kill","burn_mod_rspn101"])
 				secondary = "mp_weapon_autopistol"
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE)
@@ -1686,7 +1692,7 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				break
 			case 14: // Next-Gen Pilot
 				pModel = "models/humans/pilots/pilot_medium_stalker_m.mdl"
-				SendHudMessage(player, "Respawning as Next-Gen Pilot",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
+				popUpText = "Respawning as Next-Gen Pilot"
 				player.GiveWeapon("mp_weapon_rspn101_og", ["hcog","extended_ammo","pas_run_and_gun", "tactical_cdr_on_kill","burn_mod_rspn101"])
 				secondary = "mp_weapon_smart_pistol"
 				player.TakeOffhandWeapon(0)
@@ -1705,15 +1711,17 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				Chat_ServerBroadcast(playerName + " has become a Next-Gen Pilot!",true)
 				break
 			default:
-				pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
-				SendHudMessage(player, "Invalid Class - Spawning as Rifleman",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1)
 				print("Invalid Class Number: Recieved " + string(classNum))
+				pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
+				popUpText = "Invalid Class - Spawning as Rifleman"
 				string weapon = CRIFLE[ RandomInt( CRIFLE.len() ) ]
 				player.GiveWeapon(weapon)
 				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				antiTitanTrue = false
 				break
 		}
+		SendHudMessage(player, "",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1) //Blank to remove class info
+		NSSendPopUpMessageToPlayer( player, popUpText)
 		if ( classNum != 14 )
 			player.GiveWeapon( secondary )
 		else

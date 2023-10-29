@@ -1,0 +1,652 @@
+global function calculateScore
+global function SendScoreInfo
+global function addClassScore
+global function getGruntScore
+
+global bool isGruntMode = false //Kind of a hack
+
+int function calculateScore( entity player )
+{
+	int score1 = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) + givenScore[player]
+	int score2 = score1 - usedScore[player]
+	return score2
+}
+
+void function SendScoreInfo( entity player, int addition = 0, bool showingAddition = false )
+{
+	//WaitFrame()
+	int score = calculateScore( player )
+
+	if( showingAddition )
+		NSSendPopUpMessageToPlayer( player, "+" + addition + " points - You have " + score + " points")
+	else
+		NSSendPopUpMessageToPlayer( player, "You have " + score + " points")
+}
+
+void function addClassScore( entity player, int score ) //Includes information for class upgrades and announcements
+{
+	bool hasNotified = false
+	bool hasNotified2 = false
+	bool hasNotified3 = false
+	bool hasNotified4 = false
+	bool hasNotified5 = false
+
+	table< entity, int > cClassScore = classscore0
+	switch( currentClass[player] )
+	{
+		case 0:
+			cClassScore = classscore0
+			gruntScore[player] += score
+			break
+		case 1:
+			cClassScore = classscore1
+			gruntScore[player] += score
+			break
+		case 2:
+			cClassScore = classscore2
+			gruntScore[player] += score
+			break
+		case 3:
+			cClassScore = classscore3
+			gruntScore[player] += score
+			break
+		case 4:
+			cClassScore = classscore4
+			gruntScore[player] += score
+			break
+		case 5:
+			cClassScore = classscore5
+			gruntScore[player] += score
+			break
+		case 6:
+			cClassScore = classscore6
+			gruntScore[player] += score
+			break
+		case 7:
+			cClassScore = classscore7
+			break
+		case 8:
+			cClassScore = classscore8
+			break
+		case 9:
+			cClassScore = classscore9
+			break
+		case 10:
+			cClassScore = classscore10
+			break
+		case 11:
+			cClassScore = classscore11
+			break
+		case 12:
+			cClassScore = classscore12
+			gruntScore[player] += score
+			break
+	}
+
+
+	switch( currentClass[player] )
+	{
+		case 0:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false )
+			{
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Rifleman Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Rifleman", <1,1,0>, 1, 1 )
+				foreach ( weapon in CRIFLE)
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["HCOG"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["HCOG"] )
+						//player.GiveExtraWeaponMod( "HCOG" ) this gives every possible weapon an HCOG sight until they die
+					}
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified4 == false )
+			{
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Rifleman Fast Reload", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as Rifleman", <1,1,0>, 1, 1 )
+				foreach ( weapon in CRIFLE)
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_reload"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["HCOG","pas_fast_reload"] )
+					}
+				}
+			}
+			break
+		case 1:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Communications Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Communications", <1,1,0>, 1, 1 )
+				foreach ( weapon in CSMG )
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["holosight"] ) && weapon != "mp_weapon_alternator_smg" )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["holosight"] )
+					}
+					else if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["HCOG"] ) && weapon == "mp_weapon_alternator_smg" )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["HCOG"] )
+					}
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified4 == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Communications Gunrunner", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as Communications", <1,1,0>, 1, 1 )
+				foreach ( weapon in CSMG )
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_run_and_gun"] ) && weapon != "mp_weapon_alternator_smg" )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["holosight","pas_run_and_gun"] )
+					}
+					else if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_run_and_gun"] ) && weapon == "mp_weapon_alternator_smg" )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["HCOG","pas_run_and_gun"] )
+					}
+				}
+			}
+			break
+		case 2:
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) ) // Extended Ammo
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) ) // Quickswap
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Support Extended Ammo", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) + " points as Support", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_shotgun"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["extended_ammo"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["extended_ammo"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified4 == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Support Quickswap", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as Support", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_shotgun"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_swap"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["extended_ammo","pas_fast_swap"] )
+				}
+			}
+			break
+		case 3:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment
+				hasNotified4 = true
+			if ( cClassScore[player] >= GetConVarInt( "CLASS_SNIPER_UNLOCK" ) ) // Sniper Class
+				hasNotified5 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Marksman Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Marksman", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_g2"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["redline_sight"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["redline_sight"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified4 == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Marksman Quickscope", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as Marksman", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_g2"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_ads"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["redline_sight","pas_fast_ads"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "CLASS_SNIPER_UNLOCK" ) && hasNotified5 == false )
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sniper Class", "Achieved " + GetConVarInt( "CLASS_SNIPER_UNLOCK" ) + " points as Marksman", <1,1,0>, 1, 1 )
+			break
+		case 4:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sniper Zoom Scope", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Sniper", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_dmr"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["scope_4x"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["scope_4x"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified4 == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sniper Extended Mag", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as Sniper", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_dmr"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["extended_ammo"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["scope_4x","extended_ammo"] )
+				}
+			}
+			break
+		case 5:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Heavy Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Heavy", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_lmg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["redline_sight"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["redline_sight"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified4 == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Heavy Fast Reload", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as Heavy", <1,1,0>, 1, 1 )
+				foreach ( weapon in CHEAVY )
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_reload"] ) && weapon != "mp_weapon_smr" )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["redline_sight","pas_fast_reload"] )
+					}
+					else if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_reload"] ) && weapon == "mp_weapon_smr" )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["pas_fast_reload"] )
+					}
+				}
+			}
+			break
+		case 6:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified2 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Shield Captain Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Shield Captain", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_lmg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["aog"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["aog"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified4 == false ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Shield Captain Extended Mag", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as Shield Captain", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_lmg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["extended_ammo"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["aog","extended_ammo"] )
+				}
+			}
+			break
+		case 7:
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+				hasNotified2 = true
+			cClassScore[player] += score
+
+			if ( classscore7[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Specialist Quickswap", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) + " points as Specialist", <1,1,0>, 1, 1 )
+				foreach ( weapon in CSPECIAL )
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_swap"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["pas_fast_swap"] )
+					}
+				}
+			}
+			if ( classscore7[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified2 == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Specialist Fast Reload", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as Specialist", <1,1,0>, 1, 1 )
+				foreach ( weapon in CSPECIAL )
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_reload"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["pas_fast_swap","pas_fast_reload"] )
+					}
+				}
+			}
+			break
+		case 8:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+				hasNotified4 = true
+			if (  cClassScore[player] >= GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) )
+				hasNotified2 = true
+			if (  classscore8[player] + classscore10[player] >= GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) )
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as Spectre", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_hemlok_smg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["holosight"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["holosight"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified4 == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Fast Reload", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as Spectre", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_hemlok_smg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_reload"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["holosight","pas_fast_reload"] )
+				}
+			}
+			if (  cClassScore[player] >= GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) && hasNotified2 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sniper Spectre Class", "Achieved " + GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) + " points as Spectre", <1,1,0>, 1, 1 )
+			if (  classscore8[player] + classscore10[player] >= GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Leader Class", "Achieved " + GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) + " points as a Spectre Class", <1,1,0>, 1, 1 )
+			break
+		case 9:
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+				hasNotified = true
+			cClassScore[player] += score
+
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Blast Spectre Threat Scope", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) +" points as Blast Spectre", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_lstar"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["threat_scope"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["threat_scope"] )
+				}
+			}
+			break
+		case 10:
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+				hasNotified2 = true
+			if (  classscore8[player] + classscore10[player] >= GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) )
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sniper Spectre Quickscope", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) + " points as Sniper Spectre", <1,1,0>, 1, 1 )
+				foreach ( weapon in CSNIPER )
+				{
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_ads"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["pas_fast_ads"] )
+					}
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified2 == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sniper Spectre Amped Weapons", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as Sniper Spectre", <1,1,0>, 1, 1 )
+					string weapon = "mp_weapon_sniper"
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["burn_mod_sniper"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["pas_fast_ads","burn_mod_sniper"] )
+					}
+					weapon = "mp_weapon_doubletake"
+					if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["burn_mod_doubletake"] ) )
+					{
+						player.SetActiveWeaponByName( weapon )
+						player.TakeWeaponNow( weapon )
+						player.GiveWeapon( weapon, ["pas_fast_ads","burn_mod_doubletake"] )
+					}
+			}
+			if (  classscore8[player] + classscore10[player] >= GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Leader Class", "Achieved " + GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) + " points as a Spectre Class", <1,1,0>, 1, 1 )
+			break
+		case 11:
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+				hasNotified2 = true
+			cClassScore[player] += score
+
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sentry Tech Extended Ammo", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) + " points as Sentry Tech", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_pulse_lmg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["extended_ammo"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["extended_ammo"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified2 == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Sentry Tech Fast Reload", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as Sentry Tech", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_pulse_lmg"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["pas_fast_reload"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["extended_ammo", "pas_fast_reload"] )
+				}
+			}
+			break
+		case 12:
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+				hasNotified = true
+			if ( cClassScore[player] > GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+				hasNotified2 = true
+			if ( cClassScore[player] > GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) )
+				hasNotified3 = true
+			cClassScore[player] += score
+
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) && hasNotified == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Leader Threat Scope", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) + " points as Spectre Leader", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_esaw"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["threat_scope"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["threat_scope"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) && hasNotified3 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Blast Spectre", "Achieved " + GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) + " points as Spectre Leader", <1,1,0>, 1, 1 )
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified2 == false) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Leader Extended Mag", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as Spectre Leader", <1,1,0>, 1, 1 )
+				string weapon = "mp_weapon_esaw"
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["extended_ammo"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["threat_scope","extended_ammo"] )
+				}
+			}
+			break
+		default: //Pilots not included
+			break
+	}
+}
+
+int function getGruntScore( entity victim, entity attacker, var damageInfo ) //Do we need damageInfo right now?
+{
+	int score = 0
+
+	if ( victim.IsPlayer() ) // Default Player
+	{
+		score = 5
+
+		if( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl") //Player Shield Captain
+			score = 8
+
+		if( victim.GetModelName() == $"models/humans/pilots/pilot_light_ged_m.mdl" ) //Player Specialist
+			score = 8
+
+		if ( victim.GetModelName() == $"models/robots/spectre/imc_spectre.mdl" ) //Player Spectre
+			score = 10
+
+		if ( victim.GetModelName() == $"models/humans/pilots/pilot_medium_geist_m.mdl") // Player Pilot
+			score = 20
+	}
+
+	if ( victim.GetClassName() == "npc_marvin" ) // I would make it negative but i dont wanna crash
+		score = 0
+
+	if ( victim.GetClassName() == "npc_prowler" ) // Prowler
+		score = 8
+
+	if ( victim.GetClassName() == "npc_stalker" ) // Stalker
+		score = 3
+
+	if ( victim.GetClassName() == "npc_spectre" )
+	{
+		if ( victim.GetMaxHealth() == 500 ) // AI Spectre Leader
+		{
+			score = 6
+		}
+		else // AI Spectre
+		{
+			score = 2
+		}
+	}
+	if ( victim.GetClassName() == "npc_stalker" ) // Stalker
+		score = 3
+
+	if ( victim.GetClassName() == "npc_super_spectre" ) //Reaper
+		score = 10
+
+	if ( victim.GetClassName() == "npc_dropship" ) // Grunt Dropship
+		score = 8
+
+	if ( victim.GetClassName() == "npc_soldier" ) // AI Grunt
+	{
+		if ( victim.GetModelName() == $"models/humans/pilots/sp_medium_reaper_m.mdl" || victim.GetModelName() == $"models/humans/pilots/sp_medium_stalker_m.mdl") // AI Pilot
+		{
+			score = 8
+		}
+		else if ( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl" ) // AI Shield Captain
+		{
+			score = 5
+		}
+		else if ( victim.GetModelName() == $"models/humans/grunts/imc_grunt_smg.mdl" && victim.GetTeam() == TEAM_MILITIA) //AI Militia Specialist
+		{
+			score = 4
+		}
+		else if ( victim.GetModelName() == $"models/humans/grunts/mlt_grunt_smg.mdl" && victim.GetTeam() == TEAM_IMC) //AI IMC Specialist
+		{
+			score = 4
+		}
+		else // Normal Grunt
+		{
+			score = 1
+		}
+	}
+	if ( victim.GetClassName() == "npc_drone" ) // Plasma Drone, Rocket drone, or Beam Drone
+		score = 1
+
+	if ( victim.GetClassName() == "npc_turret_sentry") // Turrets
+		score = 3
+
+	if ( victim.GetClassName() == "npc_gunship" || victim.GetModelName() == $"models/vehicle/straton/straton_imc_gunship_01.mdl") // Gunship
+		score = 10
+
+	// Player ejecting triggers this without the extra check
+	if ( victim.IsTitan() && victim.GetBossPlayer() != attacker ) // Titan
+		score += 20
+	return score
+}

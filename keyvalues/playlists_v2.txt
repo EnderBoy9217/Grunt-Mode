@@ -19,6 +19,9 @@ playlists
 				escalation_enabled 1
 				skyshow_enabled 1
 				riff_allow_npcs 1
+				scorelimit 2500
+				timelimit 25
+				earn_meter_titan_multiplier 100
 				enable_spectre_hacking 0
 				color		"88 220 151 255"
 

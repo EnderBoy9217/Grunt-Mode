@@ -4,6 +4,14 @@ global function DropPodSpawn1Player_Init
 global function SpawnFromDroppod
 global function SpawnPlayerInDropPod
 
+struct DroppodStruct
+{
+	entity door
+	bool openDoor = false
+	int numGuys = 0
+	int flags = 0
+}
+
 struct {
 	array< entity > droppods
 } file
@@ -83,13 +91,13 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 		file.droppods.append( pod )
 		svGlobal.levelEnt.EndSignal( "CleanUpEntitiesForRoundEnd" )
 		
-		// TODO: we need to make a door for this, CreateDropPodDoor in _droppod_fireteam is just busted for some reason tho
-		
 		entity camera = CreateEntity( "point_viewcontrol" )
 		vector podloaction = pod.GetOrigin() + Vector( 0, 0, 3000 )
-		camera.SetLocalOrigin( podloaction )
-		camera.SetAngles( < 90, -180, 0 > )
-		
+		vector cameraAngles = pod.GetAngles()
+		camera.SetOrigin( pod.GetOrigin() + Vector( 0, 0, 300 ) )
+		camera.SetAngles( Vector ( 90, -180, 0 ) )
+		camera.SetParent( pod )
+
 		if ( !IsAlive( player ) )
 			player.RespawnPlayer( null )
 
@@ -105,11 +113,19 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 			player.FreezeControlsOnServer()
 			AddCinematicFlag( player, CE_FLAG_HIDE_MAIN_HUD )
 			player.SetViewEntity( camera, true )
+			player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_NOBODY
+			player.isSpawning = true
 		}
 		
 		// wait for this
 		LaunchAnimDropPod( pod, "pod_testpath", targetOrigin, angles )
+
 		
+		DroppodStruct droppodData
+		droppodData.door = CreateDropPodDoor( pod )
+		//pod.Anim_Play( "idle" ) Sets door behind the drop pod for some reason
+		
+
 		//WaitFrame()
 		if( IsValid( player ) && GamePlaying() )
 		{
@@ -117,6 +133,7 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 			player.ClearViewEntity()
 			player.UnfreezeControlsOnServer()
 			RemoveCinematicFlag( player, CE_FLAG_HIDE_MAIN_HUD )
+			player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
 		}
 		else if ( IsValid( player ) && GetGameState() == eGameState.Epilogue)
 		{
@@ -124,10 +141,15 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 			player.ClearViewEntity()
 			player.UnfreezeControlsOnServer()
 			RemoveCinematicFlag( player, CE_FLAG_HIDE_MAIN_HUD )
+			player.kv.VisibilityFlags = ENTITY_VISIBLE_TO_EVERYONE
 		}
 		
-		/*
+		
+		
 		// wait a frame, otherwise this won't properly work
+		
+		// Old respawn code previously commented out
+		/*
 		WaitFrame()
 		vector doorPos = pod.GetAttachmentOrigin( pod.LookupAttachment( "hatch" ) )
 		
@@ -140,12 +162,40 @@ void function SpawnPlayerInDropPod( entity player, vector targetOrigin, vector a
 		}
 		*/
 
+		// Handles door without the random-ass error mentioned above (im better coder than respawn)
+		float doorDelayTime = 0.6
+		wait doorDelayTime
+
+		droppodData.openDoor = true
+		pod.Signal( "OpenDoor" )
+
+		if ( DropPodDoorInGround( pod ) )
+		{
+			droppodData.door.Destroy()
+		}
+		else
+		{
+			//Opendoor function rewritten for coolness
+			entity door = droppodData.door
+			door.ClearParent()
+			door.SetVelocity( door.GetForwardVector() * 500 )
+			EmitSoundOnEntity( pod, "explo_fraggrenade_impact_3p" )
+			//EmitSoundOnEntity( pod, "droppod_door_02" ) //unknown sound despite being in files
+		}
+		
+
 		if ( destructionTime != -1 && GamePlaying() )
 		{
 			wait destructionTime
 			pod.Dissolve( ENTITY_DISSOLVE_NORMAL, < 0, 0, 0 >, 0 )
 			
 			file.droppods.remove( file.droppods.find( pod ) )
+			
+			if ( IsValid( droppodData.door ) )
+				droppodData.door.Dissolve( ENTITY_DISSOLVE_CORE, Vector( 0, 0, 0 ), 500 )
+			
+
+			EmitSoundAtPosition( TEAM_UNASSIGNED, pod.GetOrigin(), "droppod_dissolve" )
 		}
 	}
 	#endif

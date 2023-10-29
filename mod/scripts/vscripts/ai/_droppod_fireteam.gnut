@@ -6,6 +6,9 @@ global function DropPodActiveThink
 
 global function CreateDropPodDoor
 
+global function DropPodDoorInGround
+global function DropPodOpenDoor
+
 const DP_ARM_MODEL = $"models/vehicle/droppod_fireteam/droppod_fireteam_arm.mdl"
 const DP_DOOR_MODEL = $"models/vehicle/droppod_fireteam/droppod_fireteam_door.mdl"
 const CAREPACKAGE_MODEL = $"models/vehicle/escape_pod/escape_pod.mdl"

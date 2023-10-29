@@ -1,0 +1,8 @@
+{
+    "name": "Grunt_Mode_2",
+    "version_number": "2.10.0",
+    "website_url": "https://discord.gg/g5DmeqSR2Z",
+    "description": "Not to be confused with VoyageDB's, this mode includes a class system and other features",
+    "dependencies": [
+    ]
+}

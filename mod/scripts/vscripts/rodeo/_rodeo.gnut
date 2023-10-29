@@ -84,7 +84,7 @@ void function CodeCallback_StartRodeo( entity player, entity rodeoTarget )
 {
 	if ( IsMenuLevel() )
 		return
-    if ( GameRules_GetGameMode() == "aitdm")
+    if ( isGruntMode )
     {
         print("Rodeo cancelled because its grunt mode")
         player.ClearParent()
