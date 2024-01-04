@@ -1,9 +1,16 @@
 # Changes
 
+# 2.10.2
+
+* Fixed Specialist Upgrade Pop-Ups not correctly displaying
+* Fixed desync issue with Sniper Spectre's doubletake
+* Fixed issue where Sniper Spectre would not spawn with doubletake
+* Fixed Crash when someone gains another turret after they leave
+
 # 2.10.1
 
 Economy:
-=-
+
 * Killing a player on an enemy hardpoint awards an extra 3 (spendable) points
 * Killing a player on a friendly hardpoint awards an extra 4 points
 * Extra 5 points for hardpoint siege or snipe

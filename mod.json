@@ -1,7 +1,7 @@
 {
 	"Name" : "Ender's Grunt Mode",
 	"Description" : "You're now a grunt, now including a class system",
-	"Version": "2.10.1",
+	"Version": "2.10.2",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
 	"ConVars": [

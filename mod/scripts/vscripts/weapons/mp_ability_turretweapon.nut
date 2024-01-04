@@ -75,9 +75,12 @@ void function droneTimerResetWait( entity player )
 	#if SERVER
 	wait 30
 	placedTurrets[player] = placedTurrets[player] - 1
-	if( HasOffhandWeapon(player, "mp_ability_turretweapon" ) )
-		thread NSSendInfoMessageToPlayer(player, "Your turret is ready to redeploy")
-	return
+	if ( IsValid(player) && player != null )
+	{
+		if( HasOffhandWeapon(player, "mp_ability_turretweapon" ) )
+			thread NSSendInfoMessageToPlayer(player, "Your turret is ready to redeploy")
+		return
+	}
 	#endif
 }
 
