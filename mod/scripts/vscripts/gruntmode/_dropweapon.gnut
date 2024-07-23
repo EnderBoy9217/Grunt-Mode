@@ -18,8 +18,10 @@ void function ClientCommandCallbackDropActiveWeapon( entity player )
     if( IsValid(player.GetActiveWeapon()) )
     {
         weaponName = player.GetActiveWeapon()
+        offHandName = player.GetOffhandWeapon(OFFHAND_ORDNANCE)
         vector droppoint = player.GetPlayerOrigin()
         CreateWeaponEntityByNameWithPhysics( weaponName, droppoint, <0,0,0> )
+        CreateWeaponEntityByNameWithPhysics( offHandName, droppoint, <0,0,0> )
    }
 }
 

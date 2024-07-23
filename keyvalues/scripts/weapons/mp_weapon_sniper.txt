@@ -3,48 +3,6 @@ WeaponData
 
 	Mods
 	{
-		iron_sights
-		{
-		}
-		scope_4x
-		{	
-		}
-		extended_ammo
-		{
-		}
-		stabilizer
-		{
-		}
-		ricochet
-		{
-		}
-        slammer
-        {
-        }
-		threat_scope
-		{
-		}
-		pro_screen
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-        pas_fast_reload
-        {
-        }
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		burn_mod_sniper
-		{
-		}
-        pve_elite
-        {
-        }
 		npc_elite_weapon
 		{
 			// Damage - When Used by NPCs
@@ -58,10 +16,10 @@ WeaponData
 			"npc_suppress_lsp_allowed"						"0"
 
 			// NPC
-			"proficiency_poor_spreadscale"					"3.0"
-			"proficiency_average_spreadscale" 				"2.2"
-			"proficiency_good_spreadscale"					"2.0"
-			"proficiency_very_good_spreadscale"   			"1.5"
+			"proficiency_poor_spreadscale"					"0.1"
+			"proficiency_average_spreadscale" 				"0.1"
+			"proficiency_good_spreadscale"					"0.1"
+			"proficiency_very_good_spreadscale"   			"0.1"
 
 			"npc_min_engage_range"							"500"
 			"npc_max_engage_range"							"8000"

@@ -1,4 +1,33 @@
-# Changes
+# Changelog
+
+# 2.12.2
+* List of all grunt classes and their upgrades now included as a Markdown file
+
+# 2.12.1
+* Updated Thunderstore formatting
+
+# 2.12.0
+* AI now will contribute to hardpoints (each AI soldier counts as half a player)
+* Increased default number of max players capturing a hardpoint to 5
+* Added conVar to quickly change the max players contributing to hardpoint progress
+* Heavily improved compatibility with other modes
+* Individual class progression and overall progresssion now working in other modes
+* Bounty hunt confirmed to be fully working
+
+# 2.11.1
+* Updated for most recent Northstar Release (Thank you to my community for pointing this out!)
+
+# 2.11.0
+* Increased melee knockback
+* Spectres get additional melee knockback
+* Melee damage slightly reduced for grunts
+* Melee damage slightly increased for spectres
+* AI Pilot Weapon accuracy doubled
+* AI Pilots can now utilize the Kraber and Smart Pistol
+* AI Pilot health 300 -> 250
+* Special AI Units now drop their respective grenade
+* Normal grunts have a 1/8 chance to drop their grenade
+* All players (excluding next-gen pilots) will drop their grenade
 
 # 2.10.2
 

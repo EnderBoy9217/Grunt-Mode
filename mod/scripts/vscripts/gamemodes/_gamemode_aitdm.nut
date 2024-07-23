@@ -46,6 +46,7 @@ void function loadConvars()
 
 void function GamemodeAITdm_Init()
 {
+	gruntSupportedGameMode = true
 	SetSpawnpointGamemodeOverride( ATTRITION ) // use bounty hunt spawns as vanilla game has no spawns explicitly defined for aitdm
 
 	AddCallback_GameStateEnter( eGameState.Prematch, OnPrematchStart )

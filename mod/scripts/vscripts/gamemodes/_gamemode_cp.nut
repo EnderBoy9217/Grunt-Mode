@@ -52,6 +52,7 @@ void function GamemodeCP_Init()
 {
 	//------------------------------------------ Ported from attrition
 
+	gruntSupportedGameMode = true
 	AddCallback_GameStateEnter( eGameState.Prematch, OnPrematchStart )
 	AddCallback_GameStateEnter( eGameState.Playing, OnPlaying )
 
@@ -124,22 +125,6 @@ void function OnPlaying()
 	{
 		thread SpawnIntroBatch( TEAM_MILITIA )
 		thread SpawnIntroBatch( TEAM_IMC )
-	}
-}
-
-void function GiveGruntPoints( entity victim, entity attacker, var damageInfo )
-{
-	if ( !( victim != attacker && GetGameState() == eGameState.Playing && attacker.IsPlayer()) ) //add getowner to this since it crash my game everytime when am trying to deploy a npctitan without a owner
-		return
-
-	int score = getGruntScore( victim, attacker, damageInfo )
-
-	if( attacker.IsPlayer() || attacker.IsTitan() && attacker.GetBossPlayer() != null )
-	{
-		attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
-		thread addClassScore( attacker, score )
-		if( score > 0 )
-			thread SendScoreInfo( attacker, score, true )
 	}
 }
 
@@ -1005,6 +990,10 @@ void function SetCapperAmount( table<int, table<string, int> > capStrength, arra
 		{
 			capStrength[p.GetTeam()]["pilots"] += 1
 		}
+		else if ( p.IsNPC() )
+		{
+			capStrength[p.GetTeam()]["grunts"] += 1
+		}
 	}
 }
 
@@ -1024,10 +1013,12 @@ void function HardpointThink( HardpointStruct hardpoint )
 			[TEAM_IMC] = {
 				pilots = 0,
 				titans = 0,
+				grunts = 0,
 			},
 			[TEAM_MILITIA] = {
 				pilots = 0,
 				titans = 0,
+				grunts = 0,
 			}
 		}
 
@@ -1039,12 +1030,15 @@ void function HardpointThink( HardpointStruct hardpoint )
 
 		int imcPilotCappers = capStrength[TEAM_IMC]["pilots"]
 		int imcTitanCappers = capStrength[TEAM_IMC]["titans"]
+		int imcGruntCappers = capStrength[TEAM_IMC]["grunts"]
 
 		int militiaPilotCappers = capStrength[TEAM_MILITIA]["pilots"]
 		int militiaTitanCappers = capStrength[TEAM_MILITIA]["titans"]
+		int militiaGruntCappers = capStrength[TEAM_MILITIA]["grunts"]
 
-		int imcCappers = ( imcTitanCappers + militiaTitanCappers ) > 0 ? imcTitanCappers : imcPilotCappers
-		int militiaCappers = ( imcTitanCappers + militiaTitanCappers ) <= 0 ? militiaPilotCappers : militiaTitanCappers
+
+		int imcCappers = ( imcPilotCappers * 2 ) + imcGruntCappers //( imcTitanCappers + militiaTitanCappers ) > 0 ? imcTitanCappers : imcPilotCappers
+		int militiaCappers = ( militiaPilotCappers * 2 ) + militiaGruntCappers //( imcTitanCappers + militiaTitanCappers ) <= 0 ? militiaPilotCappers : militiaTitanCappers
 
 		int cappingTeam
 		int capperAmount = 0
@@ -1064,7 +1058,10 @@ void function HardpointThink( HardpointStruct hardpoint )
 			cappingTeam = TEAM_MILITIA
 			capperAmount = militiaCappers
 		}
-		capperAmount = minint(capperAmount, 3)
+
+		int MAX_CAPPERS = GetConVarInt( "MAX_CAPPERS" ) * 2
+		float CAPTURE_TIME = CAPTURE_DURATION_CAPTURE * 2 //Double capture time as players count as double captures
+		capperAmount = minint(capperAmount, MAX_CAPPERS)
 
 		if(hardpointBlocked)
 		{
@@ -1092,7 +1089,7 @@ void function HardpointThink( HardpointStruct hardpoint )
 		{
 			if(GetHardpointCappingTeam(hardpoint)==TEAM_UNASSIGNED) // uncapped point with no one inside
 			{
-				SetHardpointCaptureProgress( hardpoint, min(1.0,GetHardpointCaptureProgress( hardpoint ) + ( deltaTime / CAPTURE_DURATION_CAPTURE * capperAmount) ) )
+				SetHardpointCaptureProgress( hardpoint, min(1.0,GetHardpointCaptureProgress( hardpoint ) + ( deltaTime / CAPTURE_TIME * capperAmount) ) )
 				SetHardpointCappingTeam(hardpoint,cappingTeam)
 				if(GetHardpointCaptureProgress(hardpoint)>=1.0)
 				{
@@ -1102,7 +1099,7 @@ void function HardpointThink( HardpointStruct hardpoint )
 			}
 			else if(GetHardpointCappingTeam(hardpoint)==cappingTeam) // uncapped point with ally inside
 			{
-				SetHardpointCaptureProgress( hardpoint,min(1.0, GetHardpointCaptureProgress( hardpoint ) + ( deltaTime / CAPTURE_DURATION_CAPTURE * capperAmount) ) )
+				SetHardpointCaptureProgress( hardpoint,min(1.0, GetHardpointCaptureProgress( hardpoint ) + ( deltaTime / CAPTURE_TIME * capperAmount) ) )
 				if(GetHardpointCaptureProgress(hardpoint)>=1.0)
 				{
 					CapturePointForTeam(hardpoint,cappingTeam)
@@ -1111,7 +1108,7 @@ void function HardpointThink( HardpointStruct hardpoint )
 			}
 			else // uncapped point with enemy inside
 			{
-				SetHardpointCaptureProgress( hardpoint,max(0.0, GetHardpointCaptureProgress( hardpoint ) - ( deltaTime / CAPTURE_DURATION_CAPTURE * capperAmount) ) )
+				SetHardpointCaptureProgress( hardpoint,max(0.0, GetHardpointCaptureProgress( hardpoint ) - ( deltaTime / CAPTURE_TIME * capperAmount) ) )
 				if(GetHardpointCaptureProgress(hardpoint)==0.0)
 				{
 					SetHardpointCappingTeam(hardpoint,cappingTeam)
@@ -1126,7 +1123,7 @@ void function HardpointThink( HardpointStruct hardpoint )
 		else if(hardpointEnt.GetTeam()!=cappingTeam) // capping enemy point
 		{
 			SetHardpointCappingTeam(hardpoint,cappingTeam)
-			SetHardpointCaptureProgress( hardpoint,max(0.0, GetHardpointCaptureProgress( hardpoint ) - ( deltaTime / CAPTURE_DURATION_CAPTURE * capperAmount) ) )
+			SetHardpointCaptureProgress( hardpoint,max(0.0, GetHardpointCaptureProgress( hardpoint ) - ( deltaTime / CAPTURE_TIME * capperAmount) ) )
 			if(GetHardpointCaptureProgress(hardpoint)<=1.0)
 			{
 				if (GetHardpointState(hardpoint) == CAPTURE_POINT_STATE_AMPED) // only play 2inactive animation if we were amped
@@ -1145,7 +1142,7 @@ void function HardpointThink( HardpointStruct hardpoint )
 			SetHardpointCappingTeam(hardpoint,cappingTeam)
 			if(GetHardpointCaptureProgress(hardpoint)<1.0) // not amped
 			{
-				SetHardpointCaptureProgress(hardpoint,GetHardpointCaptureProgress(hardpoint)+(deltaTime/CAPTURE_DURATION_CAPTURE*capperAmount))
+				SetHardpointCaptureProgress(hardpoint,GetHardpointCaptureProgress(hardpoint)+( deltaTime / CAPTURE_TIME * capperAmount ))
 			}
 			else if(file.ampingEnabled)//amping or reamping
 			{

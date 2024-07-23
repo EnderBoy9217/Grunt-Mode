@@ -2,57 +2,6 @@ WeaponData
 {
 	Mods
 	{
-		iron_sights
-		{
-		}
-		extended_ammo
-		{
-		}
-		silencer //HACK JFS: Doesn't get applied on amped weapons. See bug 170460
-		{
-		}
-		enhanced_targeting
-		{
-		}
-		hcog
-		{
-		}
-		threat_scope
-		{
-		}
-		pro_screen
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		pas_fast_reload
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		burn_mod_smart_pistol
-		{
-		}
-		proto_activeshot
-		{
-		}
-		proto_tracker //Turned on by default as a test.
-		{
-		}
-		ads_smaller_lock_on
-		{
-		}
-		og_pilot
-		{
-		}
 		npc_elite_weapon
 		{
 			"smart_ammo_targeting_time_min_npc"				"0.1"
@@ -75,10 +24,10 @@ WeaponData
 			"npc_rest_time_between_bursts_min"				"0.2"
 			"npc_rest_time_between_bursts_max"				"0.3"
 
-			"proficiency_poor_spreadscale"					"7.0"
-			"proficiency_average_spreadscale" 				"5.0"
-			"proficiency_good_spreadscale"					"3.33333"
-			"proficiency_very_good_spreadscale"   			"1.66667"
+			"proficiency_poor_spreadscale"					"0.1"
+			"proficiency_average_spreadscale" 				"0.1"
+			"proficiency_good_spreadscale"					"0.1"
+			"proficiency_very_good_spreadscale"   			"0.1"
 
 			"smart_ammo_allow_search_while_firing"			"1"
 			"smart_ammo_allow_ads_lock"						"1" // "0" is default

@@ -680,7 +680,7 @@ entity function NpcTitanBecomesPilot( entity titan )
 	entity titanSoul = titan.GetTitanSoul()
 	titanSoul.soul.seatedNpcPilot.isValid = false
 
-	array<string> pilotWeapons = [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og"]
+	array<string> pilotWeapons = [ "mp_weapon_alternator_smg", "mp_weapon_r97", "mp_weapon_car", "mp_weapon_vinson", "mp_weapon_rspn101_og","mp_weapon_sniper","mp_weapon_smart_pistol"]
 	string weapon 			= pilotWeapons[ RandomInt( pilotWeapons.len() ) ]
 	string squadName 		= titanSoul.soul.seatedNpcPilot.squadName
 	asset model 			= titanSoul.soul.seatedNpcPilot.modelAsset
@@ -693,7 +693,7 @@ entity function NpcTitanBecomesPilot( entity titan )
 
     pilot.SetModel($"models/humans/pilots/pilot_medium_geist_f.mdl")
 
-	// pretty messed up in mp because pilots always running around... just ignore it         
+	// pretty messed up in mp because pilots always running around... just ignore it
 	// lets restart it alright? cannot use respawn code, hardcode it
     if( !IsMultiplayer() )
 		thread CaptainThink( pilot )

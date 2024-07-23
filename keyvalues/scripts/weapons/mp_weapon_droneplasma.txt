@@ -2,9 +2,6 @@ WeaponData
 {
 	Mods
 	{
-		fd_damage
-		{
-		}
 		npc_elite_weapon
 		{
 			"npc_miss_fast_player"							"0"

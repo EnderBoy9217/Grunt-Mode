@@ -3,36 +3,6 @@ WeaponData
 
 	Mods
 	{
-		extended_ammo
-		{
-		}
-		pro_screen
-		{
-		}
-		pas_fast_reload
-		{
-		}
-		burn_mod_mgl
-		{
-		}
-		ar_trajectory
-		{
-		}
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		at_unlimited_ammo
-        {
-        }
 		npc_elite_weapon
 		{
 			"npc_self_explosion_safety"						"0"

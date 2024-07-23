@@ -14,6 +14,7 @@ struct {
 
 void function GamemodePs_Init()
 {
+	gruntSupportedGameMode = true
 	//BecomesGruntMode_Init() //HACK because I forgot how things work
 	AddCallback_GameStateEnter( eGameState.Prematch, OnPrematchStart )
 	Riff_ForceTitanAvailability( eTitanAvailability.Never )
@@ -36,22 +37,6 @@ void function GamemodePs_Init()
 void function OnPrematchStart()
 {
 	thread StratonHornetDogfightsIntense()
-}
-
-void function GiveGruntPoints( entity victim, entity attacker, var damageInfo )
-{
-	if ( !( victim != attacker && GetGameState() == eGameState.Playing && attacker.IsPlayer()) ) //add getowner to this since it crash my game everytime when am trying to deploy a npctitan without a owner
-		return
-
-	int score = getGruntScore( victim, attacker, damageInfo )
-
-	if( attacker.IsPlayer() || attacker.IsTitan() && attacker.GetBossPlayer() != null )
-	{
-		attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
-		thread addClassScore( attacker, score )
-		if( score > 0 )
-			thread SendScoreInfo( attacker, score, true )
-	}
 }
 
 void function GiveScoreForPlayerKill( entity victim, entity attacker, var damageInfo )

@@ -1,7 +1,7 @@
 {
 	"Name" : "Ender's Grunt Mode",
 	"Description" : "You're now a grunt, now including a class system",
-	"Version": "2.10.2",
+	"Version": "2.12.1",
 	"LoadPriority": 2,
 	"RequiredOnClient": false,
 	"ConVars": [
@@ -189,6 +189,11 @@
 			"Name": "GR_ATTACHMENT_LEVEL_MULTIPLE_2",
 			"DefaultValue": "40",
 			"HelpString": "The score you need to get as a class to unlock your second attachment for that class (default 40)"
+		},
+		{
+			"Name": "MAX_CAPPERS",
+			"DefaultValue": "5",
+			"HelpString": "Maximum amount of players who can capture an objective point, each AI counts as half a player (default 5), (Vanilla default 3)"
 		}
 		
 	],

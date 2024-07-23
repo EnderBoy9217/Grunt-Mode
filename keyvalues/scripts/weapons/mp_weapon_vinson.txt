@@ -2,51 +2,6 @@ WeaponData
 {
 	Mods
 	{
-		iron_sights
-		{
-		}
-		hcog
-		{
-		}
-		redline_sight
-		{
-		}
-		threat_scope
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		smart_lock
-		{
-		}
-		pro_screen
-		{
-		}
-		extended_ammo
-		{
-		}
-		pas_fast_reload
-		{
-		}
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		burn_mod_vinson
-		{
-		}
-		test_impacts
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		training_low_ammo_disable
-		{
-		}
 		npc_elite_weapon
 		{
 			"npc_damage_near_value"   						"30"
@@ -59,10 +14,10 @@ WeaponData
 			"npc_max_engage_range_heavy_armor"				"2500"
 
 			// NPC
-			"proficiency_poor_spreadscale"					"5.0"
-			"proficiency_average_spreadscale" 				"3.5"
-			"proficiency_good_spreadscale"					"3.0"
-			"proficiency_very_good_spreadscale"   			"2.5"
+			"proficiency_poor_spreadscale"					"1.75"
+			"proficiency_average_spreadscale" 				"1.75"
+			"proficiency_good_spreadscale"					"1.75"
+			"proficiency_very_good_spreadscale"   			"1.75"
 			"proficiency_perfect_spreadscale"   			"1.75"
 
 			"npc_min_engage_range"							"0"

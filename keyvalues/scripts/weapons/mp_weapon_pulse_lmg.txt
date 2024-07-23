@@ -2,36 +2,6 @@ WeaponData
 {
 	Mods
 	{
-		slammer
-		{
-		}
-   		jump_kit
-        {
-        }
-        pro_screen
-        {
-        }
-        extended_ammo
-		{
-		}
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		burn_mod_pulse_lmg
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		pas_fast_reload
-		{
-		}
 		npc_elite_weapon
 		{
 			"npc_damage_near_value"   						"30"
@@ -41,7 +11,7 @@ WeaponData
 			"npc_explosion_damage"								"30"
 
 			"npc_max_range"   								"4000"
-			
+
 			// NPC
 			"proficiency_poor_spreadscale"					"7.0"
 			"proficiency_average_spreadscale" 				"5.0"

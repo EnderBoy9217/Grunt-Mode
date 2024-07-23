@@ -2,56 +2,14 @@ WeaponData
 {
 	Mods
 	{
-		iron_sights
-		{
-		}
-		hcog
-		{
-		}
-		holosight
-		{
-		}
-		redline_sight
-		{
-		}
-		threat_scope
-		{
-		}
-		smart_lock
-		{
-		}
-		pro_screen
-		{
-		}
-		extended_ammo
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		pas_fast_reload
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		burn_mod_alternator_smg
-		{
-		}
 		npc_elite_weapon
 		{
 			// NPC
-			"proficiency_poor_spreadscale"					"5.0"
-			"proficiency_average_spreadscale" 				"3.0"
-			"proficiency_good_spreadscale"					"3.0"
-			"proficiency_very_good_spreadscale"   			"2.5"
-			"proficiency_perfect_spreadscale" 				"1.0"
+			"proficiency_poor_spreadscale"					"0.5"
+			"proficiency_average_spreadscale" 				"0.5"
+			"proficiency_good_spreadscale"					"0.5"
+			"proficiency_very_good_spreadscale"   			"0.5"
+			"proficiency_perfect_spreadscale" 				"0.5"
 
 			"npc_min_engage_range"							"0"
 			"npc_max_engage_range"							"750"

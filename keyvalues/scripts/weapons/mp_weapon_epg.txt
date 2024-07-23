@@ -3,45 +3,6 @@ WeaponData
 
 	Mods
 	{
-		jump_kit
-        {
-        }
-        pro_screen
-        {
-        }
-       	extended_ammo
-		{
-		}
-        delayed_shot
-        {
-        }
-        slammer
-        {
-        }
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		burn_mod_epg
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		pas_fast_reload
-		{
-		}
-		slowProjectile
-		{
-		}
-		rocket_arena
-		{
-		}
 		npc_elite_weapon
 		{
 			// Damage - When Used by NPCs

@@ -56,10 +56,12 @@ global table<entity, int> classscore12
 global table<entity, PilotLoadoutDef> playerLoadout
 int score = 0
 
-
 void function BecomesGruntMode_Init()
 {
 	isGruntMode = true
+	if ( !gruntSupportedGameMode ) {
+		Gruntmode_Init()
+	}
 	SetLoadoutGracePeriodEnabled( false )
 	PrecacheModel( $"models/humans/grunts/imc_grunt_shield_captain.mdl" )
 
@@ -67,8 +69,10 @@ void function BecomesGruntMode_Init()
 	AddCallback_OnPlayerRespawned( OnPlayerRespawned )
 	AddCallback_OnPlayerGetsNewPilotLoadout( OnPlayerChangeLoadout )
 	AddCallback_OnPlayerKilled( StartKillerOutline )
+	AddCallback_OnPlayerKilled( DropGrenade )
 	AddCallback_OnPlayerKilled( OnGruntKilled )
 	AddCallback_OnPlayerKilled( LoadoutScreen )
+	AddCallback_OnNPCKilled( DropNPCGrenade )
 
 	AddSpawnCallback( "npc_soldier", PilotConfig )
 	AddSpawnCallback( "npc_marvin", MarvinConfig )
@@ -95,13 +99,13 @@ void function PilotConfig( entity soldier ) // All AI soldiers
 	}
 	if ( soldier.GetModelName() == $"models/humans/pilots/sp_medium_reaper_m.mdl" ) // MIL Pilot
 	{
-		soldier.SetMaxHealth( 300 )
-		soldier.SetHealth( 300 )
+		soldier.SetMaxHealth( 250 )
+		soldier.SetHealth( 250 )
 	}
 	if ( soldier.GetModelName() == $"models/humans/pilots/sp_medium_stalker_m.mdl" ) // IMC Pilot
 	{
-		soldier.SetMaxHealth( 300 )
-		soldier.SetHealth( 300 )
+		soldier.SetMaxHealth( 250 )
+		soldier.SetHealth( 250 )
 	}
 }
 
@@ -109,8 +113,8 @@ void function MarvinConfig( entity soldier )
 {
 	if( IsValid( soldier ) )
 	{
-		soldier.SetMaxHealth( 300 )
-		soldier.SetHealth( 300 )
+		soldier.SetMaxHealth( 50 )
+		soldier.SetHealth( 50 )
 		Highlight_SetFriendlyHighlight( soldier, "friendly_ai" )
 		soldier.SetNameVisibleToEnemy( false )
 	}
@@ -237,13 +241,6 @@ void function OnClientConnected( entity player )
 	AddButtonPressedPlayerInputCallback( player, IN_BACK, SwitchClassesInputDelayed)
 }
 
-function calculateScore( entity player )
-{
-	int score1 = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) + givenScore[player]
-	int score2 = score1 - usedScore[player]
-	return score2
-}
-
 void function SwitchClassesInputDelayed( entity player )
 {
 	if (deathDelay[player] == true)
@@ -273,7 +270,7 @@ void function SwitchClassesBack( entity player )
 		{
 			shownClass[player] <- maxClasses
 		}
-		int score = expect int(calculateScore( player ))
+		int score = calculateScore( player )
 		UpdateCycle( player, shownClass[player], selectedClass[player], score)
 	}
 }
@@ -292,7 +289,7 @@ void function SwitchClasses( entity player )
 		{
 			shownClass[player] <- 0
 		}
-		int score = expect int(calculateScore( player ))
+		int score = calculateScore( player )
 		UpdateCycle( player, shownClass[player], selectedClass[player], score)
 	}
 }
@@ -300,7 +297,7 @@ void function SwitchClasses( entity player )
 
 void function LoadoutScreen( entity player, entity attacker, var damageInfo ) //Happens on player killed
 {
-	int score = expect int(calculateScore( player ))
+	int score = calculateScore( player )
 	print("Player Score:")
 	print(score)
 	int selected = selectedClass[player]
@@ -462,7 +459,7 @@ string function opPilotText()
 
 void function sendClassMessage( entity player, int classNum )
 {
-	int score = expect int(calculateScore( player ))
+	int score = calculateScore( player )
 	string scoreText = "You have " + score + " points to spend \n"
 	string sentText = ""
 
@@ -1106,7 +1103,7 @@ void function sendPingInfo( entity player )
 
 void function sendScoreInfo( entity player )
 {
-	int score = expect int(calculateScore( player ))
+	int score = calculateScore( player )
 	NSSendPopUpMessageToPlayer( player, "You have " + score + " points to spend")
 }
 
@@ -1171,6 +1168,94 @@ void function StartKillerOutline( entity victim, entity attacker, var damageInfo
 {
 	if( attacker.IsNPC() || attacker.IsPlayer() )
 		Highlight_SetDeathRecapHighlight( attacker, "killer_outline" )
+}
+
+void function DropGrenade( entity victim, entity attacker, var damageInfo  ) {
+	if ( IsValid(victim) ) {
+		entity offHandName = victim.GetOffhandWeapon(OFFHAND_ORDNANCE)
+		if ( offHandName.GetWeaponClassName() == "mp_weapon_grenade_gravity") // Don't drop gravstar, will likely cause a crash if picked up because of weapon mods
+			return
+		vector droppoint = victim.GetOrigin()
+		entity grenade = CreateWeaponEntityByNameWithPhysics( offHandName.GetWeaponClassName(), droppoint, <0,0,0> )
+		grenade.SetMods(["grunt_mode"])
+		Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+		Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+	}
+}
+
+void function DropNPCGrenade( entity victim, entity attacker, var damageInfo ) {
+	if ( IsValid(victim) ) {
+		bool shouldDropGrenade = CoinFlip() && CoinFlip() && CoinFlip()
+		vector droppoint = victim.GetOrigin()
+		if ( victim.GetClassName() == "npc_soldier" ) // AI Grunt
+		{
+			if ( victim.GetModelName() == $"models/humans/pilots/sp_medium_reaper_m.mdl" || victim.GetModelName() == $"models/humans/pilots/sp_medium_stalker_m.mdl") // AI Pilot
+			{
+				entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_frag_grenade", droppoint, <0,0,0>)
+				grenade.SetMods(["grunt_mode"])
+				Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+				Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+			}
+			else if ( victim.GetModelName() == $"models/humans/grunts/imc_grunt_shield_captain.mdl" ) // AI Shield Captain
+			{
+				entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_grenade_electric_smoke", droppoint, <0,0,0>)
+				grenade.SetMods(["grunt_mode"])
+				Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+				Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+			}
+			else if ( victim.GetModelName() == $"models/humans/grunts/imc_grunt_smg.mdl" && victim.GetTeam() == TEAM_MILITIA) //AI Militia Specialist
+			{
+				entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_grenade_emp", droppoint, <0,0,0>)
+				grenade.SetMods(["grunt_mode"])
+				Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+				Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+			}
+			else if ( victim.GetModelName() == $"models/humans/grunts/mlt_grunt_smg.mdl" && victim.GetTeam() == TEAM_IMC) //AI IMC Specialist
+			{
+				entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_grenade_emp", droppoint, <0,0,0>)
+				grenade.SetMods(["grunt_mode"])
+				Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+				Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+			}
+			else // Normal Grunt
+			{
+				if ( shouldDropGrenade ) {
+					entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_frag_grenade", droppoint, <0,0,0>)
+					grenade.SetMods(["grunt_mode"])
+					Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+					Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+				}
+			}
+		}
+		if ( victim.GetClassName() == "npc_spectre" )
+		{
+			if ( victim.GetMaxHealth() == 500 ) // AI Spectre Leader
+			{
+				entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_grenade_emp", droppoint, <0,0,0>)
+				grenade.SetMods(["grunt_mode"])
+				Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+				Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+			}
+			else // AI Spectre
+			{
+				if ( shouldDropGrenade ) {
+					entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_grenade_emp", droppoint, <0,0,0>)
+					grenade.SetMods(["grunt_mode"])
+					Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+					Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+				}
+			}
+		}
+		if ( victim.GetClassName() == "npc_stalker" ) // Stalker
+		{
+			if ( shouldDropGrenade ) {
+				entity grenade = CreateWeaponEntityByNameWithPhysics( "mp_weapon_grenade_emp", droppoint, <0,0,0>)
+				grenade.SetMods(["grunt_mode"])
+				Highlight_SetOwnedHighlight( grenade, "weapon_drop_active" )
+				Highlight_SetNeutralHighlight( grenade, "weapon_drop_normal" )
+			}
+		}
+	}
 }
 
 void function OnGruntKilled( entity victim, entity attacker, var damageInfo ) //On player killed

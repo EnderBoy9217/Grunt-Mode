@@ -1,13 +1,28 @@
+global function Gruntmode_Init
 global function calculateScore
 global function SendScoreInfo
 global function addClassScore
 global function getGruntScore
+global function GiveGruntPoints
 
-global bool isGruntMode = false //Kind of a hack
+global bool isGruntMode = false // Gets automatically enabled in BecomesGruntMode_Init(), would reorder scripts but I'm too lazy
+global bool gruntSupportedGameMode = false
+
+void function Gruntmode_Init()
+{
+	AddCallback_OnNPCKilled( GiveGruntPoints )
+	AddCallback_OnPlayerKilled( GiveGruntPoints )
+	Riff_ForceBoostAvailability( eBoostAvailability.Disabled )
+	Riff_ForceTitanAvailability( eTitanAvailability.Never )
+}
 
 int function calculateScore( entity player )
 {
-	int score1 = player.GetPlayerGameStat(PGS_ASSAULT_SCORE) + givenScore[player]
+	int score1 = givenScore[player] + player.GetPlayerGameStat(PGS_ASSAULT_SCORE)
+	if ( !gruntSupportedGameMode ) {
+		score1 = givenScore[player] // Assault score can be heavily modified by other factors
+	}
+	
 	int score2 = score1 - usedScore[player]
 	return score2
 }
@@ -25,6 +40,10 @@ void function SendScoreInfo( entity player, int addition = 0, bool showingAdditi
 
 void function addClassScore( entity player, int score ) //Includes information for class upgrades and announcements
 {
+	if ( !gruntSupportedGameMode ) {
+		givenScore[player] += score
+	}
+
 	bool hasNotified = false
 	bool hasNotified2 = false
 	bool hasNotified3 = false
@@ -604,8 +623,6 @@ int function getGruntScore( entity victim, entity attacker, var damageInfo ) //D
 			score = 2
 		}
 	}
-	if ( victim.GetClassName() == "npc_stalker" ) // Stalker
-		score = 3
 
 	if ( victim.GetClassName() == "npc_super_spectre" ) //Reaper
 		score = 10
@@ -636,6 +653,7 @@ int function getGruntScore( entity victim, entity attacker, var damageInfo ) //D
 			score = 1
 		}
 	}
+
 	if ( victim.GetClassName() == "npc_drone" ) // Plasma Drone, Rocket drone, or Beam Drone
 		score = 1
 
@@ -649,4 +667,20 @@ int function getGruntScore( entity victim, entity attacker, var damageInfo ) //D
 	if ( victim.IsTitan() && victim.GetBossPlayer() != attacker ) // Titan
 		score += 20
 	return score
+}
+
+void function GiveGruntPoints( entity victim, entity attacker, var damageInfo )
+{
+	if ( !( victim != attacker && GetGameState() == eGameState.Playing && attacker.IsPlayer()) ) //add getowner to this since it crash my game everytime when am trying to deploy a npctitan without a owner
+		return
+
+	int score = getGruntScore( victim, attacker, damageInfo )
+
+	if( attacker.IsPlayer() || attacker.IsTitan() && attacker.GetBossPlayer() != null )
+	{
+		attacker.AddToPlayerGameStat( PGS_ASSAULT_SCORE, score )
+		thread addClassScore( attacker, score )
+		if( score > 0 )
+			thread SendScoreInfo( attacker, score, true )
+	}
 }

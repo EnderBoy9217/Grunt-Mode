@@ -1,6 +1,5 @@
 WeaponData
 {
-
 	Mods
 	{
 		npc_elite_weapon

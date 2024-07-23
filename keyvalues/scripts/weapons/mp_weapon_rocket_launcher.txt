@@ -3,42 +3,6 @@ WeaponData
 
 	Mods
 	{
-		extended_ammo
-		{
-		}
-		pro_screen
-		{
-		}
-		pas_fast_reload
-		{
-		}
-		fast_lock
-		{
-		}
-		burn_mod_rocket_launcher
-		{
-		}
-		pas_fast_ads
-		{
-		}
-		pas_fast_swap
-		{
-		}
-		tactical_cdr_on_kill
-		{
-		}
-		pas_run_and_gun
-		{
-		}
-		sp_s2s_settings
-		{
-		}
-		fd_mortar_mode
-		{
-		}
-		at_unlimited_ammo
-        {
-        }
 		npc_elite_weapon
 		{
 			// Damage - When Used by NPCs

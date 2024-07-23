@@ -1,4 +1,4 @@
-### Grunt Mode 2.10.2
+### Grunt Mode 2.12.1
 
 Please report any bugs or give feedback in this discord
 Also join it to get access to updates early and talk with developers:
@@ -16,6 +16,7 @@ AI have increased health and will behave similar to the master difficulty (Takin
 
 Special AI have been added to the gamemode such as Titans, Prowlers, Specialists, and Shield Captains (and more), these will follow attrition escalation and more powerful units will spawn later in the round.
 
+Enjoy this gamemode in its three main supported gamemodes, including Attrition, Pilots vs. Pilots, and Amped Hardpoints, or on other gamemodes like Bounty Hunt or Capture the Flag.
 
 ##### Classes:
 
