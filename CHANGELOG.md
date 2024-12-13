@@ -1,5 +1,26 @@
 # Changelog
 
+# TODO:
+* Add despawn timer to grenades
+
+# 2.13.1
+* Updated to support the new "Switch teams" option introduced in 1.29.0 (Northstar Mods#872) (AI may be marked oddly but thats a Northstar issue for now)
+* Fixed issue with dropships getting crushed
+
+
+# 2.13.0:
+* Convar now allows you to re-enable killcams
+* Select menu now shows your progress toward earning enough points for a class
+* Select menu now shows progress toward unlocking a class
+* Slight wording changes in class details
+* New selector icon to show if a class is too expensive or is locked behind requirements
+* Added AI Units to the CTF gamemode
+* Fixed Spectre Leader contributing to Pilot Score instead of Sentry Tech
+* AI Pilots no longer recieve Smart Pistols (due to a crash)
+* Hemlok Grunt has been added to the game
+* Specialist now uses human models by default to match with the grunt specialist
+* Added convar for specialist skin
+
 # 2.12.2
 * List of all grunt classes and their upgrades now included as a Markdown file
 

@@ -404,7 +404,59 @@ void function WaitForever()
 
 bool function ShouldDoReplay( entity player, entity attacker, float replayTime, int methodOfDeath )
 {
-	return false
+	if ( GetConVarBool( "DISABLE_KILLCAMS" ) )
+	{
+		print( "ShouldDoReplay(): Not doing replay because of convars" );
+		return false
+	}
+
+	if ( ShouldDoReplayIsForcedByCode() )
+	{
+		print( "ShouldDoReplay(): Doing a replay because code forced it." );
+		return true
+	}
+
+	if ( GetCurrentPlaylistVarInt( "replay_disabled", 0 ) == 1 )
+	{
+		print( "ShouldDoReplay(): Not doing a replay because 'replay_disabled' is enabled in the current playlist.\n" );
+		return false
+	}
+
+	switch( methodOfDeath )
+	{
+		case eDamageSourceId.human_execution:
+		case eDamageSourceId.titan_execution:
+		{
+			print( "ShouldDoReplay(): Not doing a replay because the player died from an execution.\n" );
+			return false
+		}
+	}
+
+	if ( level.nv.replayDisabled )
+	{
+		print( "ShouldDoReplay(): Not doing a replay because replays are disabled for the level.\n" );
+		return false
+	}
+
+	if ( Time() - player.p.connectTime <= replayTime ) //Bad things happen if we try to do a kill replay that lasts longer than the player entity existing on the server
+	{
+		print( "ShouldDoReplay(): Not doing a replay because the player is not old enough.\n" );
+		return false
+	}
+
+	if ( player == attacker )
+	{
+		print( "ShouldDoReplay(): Not doing a replay because the attacker is the player.\n" );
+		return false
+	}
+
+	if ( player.IsBot() == true )
+	{
+		print( "ShouldDoReplay(): Not doing a replay because the player is a bot.\n" );
+		return false
+	}
+
+	return AttackerShouldTriggerReplay( attacker )
 }
 
 // Don't let things like killbrushes show replays

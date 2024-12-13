@@ -5,8 +5,9 @@ global function addClassScore
 global function getGruntScore
 global function GiveGruntPoints
 
-global bool isGruntMode = false // Gets automatically enabled in BecomesGruntMode_Init(), would reorder scripts but I'm too lazy
+global bool isGruntMode = false // Gets automatically enabled in BecomesGruntMode_Init() when mod is enabled, would reorder scripts but I'm too lazy
 global bool gruntSupportedGameMode = false
+global bool gruntSpawnoverride = false
 
 void function Gruntmode_Init()
 {
@@ -49,8 +50,24 @@ void function addClassScore( entity player, int score ) //Includes information f
 	bool hasNotified3 = false
 	bool hasNotified4 = false
 	bool hasNotified5 = false
+	bool hasNotified6 = false
 
 	table< entity, int > cClassScore = classscore0
+
+	if ( hemlokPoints[player] < GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) )
+	{
+		string attackerWeapon = "none"
+		if ( IsValid( player.GetActiveWeapon() ) )
+			attackerWeapon = player.GetActiveWeapon().GetWeaponClassName()
+		if ( attackerWeapon == "mp_weapon_hemlok" ) {
+			print("Awarding Hemlok points")
+			hemlokPoints[player] += score
+			if ( hemlokPoints[player] >= GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) ) {
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Hemlok Rifleman Class", "Achieved " + GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) + " points with the Hemlok", <1,1,0>, 1, 1 )
+			}
+		}
+	}
+
 	switch( currentClass[player] )
 	{
 		case 0:
@@ -95,9 +112,13 @@ void function addClassScore( entity player, int score ) //Includes information f
 			break
 		case 11:
 			cClassScore = classscore11
+			gruntScore[player] += score
 			break
 		case 12:
 			cClassScore = classscore12
+			break
+		case 15:
+			cClassScore = classscore15
 			gruntScore[player] += score
 			break
 	}
@@ -574,6 +595,70 @@ void function addClassScore( entity player, int score ) //Includes information f
 					player.SetActiveWeaponByName( weapon )
 					player.TakeWeaponNow( weapon )
 					player.GiveWeapon( weapon, ["threat_scope","extended_ammo"] )
+				}
+			}
+			break
+		case 15:
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) ) // Sights
+				hasNotified = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) ) // Attachment 1
+				hasNotified2 = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) ) // Attachment 2
+				hasNotified3 = true
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) ) // Attachment 3
+				hasNotified4 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) ) // Spectre
+				hasNotified5 = true
+			if  ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) ) // Pilot
+				hasNotified6 = true
+			cClassScore[player] += score
+
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) && hasNotified5 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Spectre Class", "Achieved " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+			if ( gruntScore[player] >= GetConVarInt( "CLASS_PILOT_UNLOCK" ) && hasNotified6 == false)
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Pilot Class", "Achieved " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " points as a Grunt", <1,1,0>, 1, 1 )
+
+			
+			string weapon = "mp_weapon_hemlok"
+			if ( cClassScore[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) && hasNotified == false )
+			{
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Hemlok Rifleman Weapon Scopes", "Achieved " + GetConVarInt( "GR_OPTICS_LEVEL" ) + " points as a Hemlok Rifleman", <1,1,0>, 1, 1 )
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["hcog"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["hcog"] )
+					//player.GiveExtraWeaponMod( "HCOG" ) this gives every possible weapon an HCOG sight until they die
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) && hasNotified2 == false )
+			{
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Hemlok Rifleman Extended Mag", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) + " points as a Hemlok Rifleman", <1,1,0>, 1, 1 )
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["hcog","extended_ammo"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["hcog","extended_ammo"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) && hasNotified3 == false )
+			{
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Hemlok Rifleman Quickscope", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL" ) + " points as a Hemlok Rifleman", <1,1,0>, 1, 1 )
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["hcog","extended_ammo","pas_fast_ads"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["hcog","extended_ammo","pas_fast_ads"] )
+				}
+			}
+			if ( cClassScore[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) && hasNotified4 == false )
+			{
+				NSSendAnnouncementMessageToPlayer( player, "Unlocked Hemlok Rifleman Amped Hemlok", "Achieved " + GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) + " points as a Hemlok Rifleman", <1,1,0>, 1, 1 )
+				if ( IsAlive( player ) && HasWeapon( player, weapon ) && !HasWeapon( player, weapon, ["hcog","extended_ammo","pas_fast_ads","burn_mod_hemlok"] ) )
+				{
+					player.SetActiveWeaponByName( weapon )
+					player.TakeWeaponNow( weapon )
+					player.GiveWeapon( weapon, ["hcog","extended_ammo","pas_fast_ads","burn_mod_hemlok"] )
 				}
 			}
 			break

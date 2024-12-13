@@ -21,7 +21,6 @@ global array<string> CSNIPER = [ "mp_weapon_doubletake", "mp_weapon_sniper" ] //
 //--------------------------------------------------------------
 int maxClasses = 14 //Number of pickable classes starting from 0 (Number of cases)
 
-
 //-------------------------------------------------------------
 
 //Player tables
@@ -38,6 +37,7 @@ global table<entity, bool> deathDelay // True = Can use WASD inputs
 global table<entity, int> specialistDrones
 global table<entity, int> gruntScore
 global table<entity, int> rifleStreak
+global table<entity, int> hemlokPoints
 
 global table<entity, int> classscore0
 global table<entity, int> classscore1
@@ -52,6 +52,8 @@ global table<entity, int> classscore9
 global table<entity, int> classscore10
 global table<entity, int> classscore11
 global table<entity, int> classscore12
+// Pilot and non-upgrade classes don't need scores
+global table<entity, int> classscore15
 
 global table<entity, PilotLoadoutDef> playerLoadout
 int score = 0
@@ -59,6 +61,14 @@ int score = 0
 void function BecomesGruntMode_Init()
 {
 	isGruntMode = true
+
+	if ( GetConVarString( "HEMLOK_ENABLED" ) == "true" ) { // If Hemlok Rifleman is enabled
+		maxClasses = 15
+	}
+
+	if ( GetConVarString( "CUSTOM_GRUNT_SPAWNING" ) == "true" ) {
+		gruntSpawnoverride = true
+	}
 	if ( !gruntSupportedGameMode ) {
 		Gruntmode_Init()
 	}
@@ -211,6 +221,7 @@ void function setClassScores( entity player )
 	classscore10[player] <- 0
 	classscore11[player] <- 0
 	classscore12[player] <- 0
+	classscore15[player] <- 0
 }
 void function OnClientConnected( entity player )
 {
@@ -226,6 +237,7 @@ void function OnClientConnected( entity player )
 	currentClass[player] <- 0
 	rifleStreak[player] <- 0
 	gruntScore[player] <- 0
+	hemlokPoints[player] <- 0
 	setClassScores(player)
 
 
@@ -324,14 +336,18 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	string title3 = ""
 	string title4 = ""
 	int classScore = 0
+	string selectString = "[#]"
 	string str1 = expect string(determineClass( shown, player ))
 	classScore = expect int(determineClassScore( shown ))
 	if ( str1.find("[") == null ) //string does not contain "["
 	{
 		if (classScore > score )
 		{
-			title1 = "[$$$] "
+			title1 = "[$" + score + "/" + classScore + "] "
+			selectString = "[$]"
 		}
+	} else {
+		selectString = "[!]"
 	}
 	shown = expect int(increaseShown( shown ))
 	string str2 = expect string(determineClass( shown, player ))
@@ -340,7 +356,7 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score )
 		{
-			title2 = "[$$$] "
+			title2 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
@@ -350,7 +366,7 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score)
 		{
-			title3 = "[$$$] "
+			title3 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
@@ -360,7 +376,7 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score)
 		{
-			title4 = "[$$$] "
+			title4 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	if (title1 == "" && str1.find("[") == null )
@@ -371,7 +387,7 @@ void function UpdateCycle( entity player, int shown, int selected, int score)
 	{
 		selectedClass[player] = 0
 	}
-	NSEditStatusMessageOnPlayer(player, "[#]",title1 + str1, "status1")
+	NSEditStatusMessageOnPlayer(player, selectString, title1 + str1, "status1")
 	NSEditStatusMessageOnPlayer(player,"",title2 + str2, "status2")
 	NSEditStatusMessageOnPlayer(player,"",title3 + str3, "status3")
 	NSEditStatusMessageOnPlayer(player,"",title4 + str4, "status4")
@@ -391,7 +407,7 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score )
 		{
-			title1 = "[$$$] "
+			title1 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
@@ -401,7 +417,7 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score )
 		{
-			title2 = "[$$$] "
+			title2 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
@@ -411,7 +427,7 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score)
 		{
-			title3 = "[$$$] "
+			title3 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	shown = expect int(increaseShown( shown ))
@@ -421,7 +437,7 @@ void function ShowCycle( entity player, int shown, int selected, int score)
 	{
 		if (classScore > score)
 		{
-			title4 = "[$$$] "
+			title4 = "[$" + score + "/" + classScore + "] "
 		}
 	}
 	if (title1 == "" && str1.find("[") == null )
@@ -505,6 +521,8 @@ void function sendClassMessage( entity player, int classNum )
 		case 12:
 			cClassScore = classscore12
 			break
+		case 15:
+			cClassScore = classscore15
 	}
 	string cScoreText = "You have " + cClassScore[player] + " points with this class\n"
 
@@ -529,7 +547,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[GET " + GetConVarInt( "CLASS_SNIPER_UNLOCK" ) + " MARKSMAN POINTS]"
+				int pointsLeft = GetConVarInt( "CLASS_SNIPER_UNLOCK" ) - classscore3[player]
+				sentText = "[GET " + pointsLeft + " POINTS AS A MARKSMAN]"
 			}
 			break
 		case 5:
@@ -548,7 +567,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[GET " + GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) + " POINTS AS A GRUNT]"
+				int pointsLeft = GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) - gruntScore[player]
+				sentText = "[GET " + pointsLeft + " POINTS AS A GRUNT]"
 			}
 			break
 		case 9:
@@ -558,7 +578,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[GET " + GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) + " POINTS AS A SPECTRE LEADER]"
+				int pointsLeft = GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) - classscore12[player]
+				sentText = "[GET " + pointsLeft + " POINTS AS A SPECTRE LEADER]"
 			}
 			break
 		case 10:
@@ -568,7 +589,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[GET " + GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) +" POINTS AS A SPECTRE]"
+				int pointsLeft = GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) - classscore8[player]
+				sentText = "[GET " + pointsLeft +" POINTS AS A SPECTRE]"
 			}
 			break
 		case 11:
@@ -578,7 +600,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[SPAWN " + GetConVarInt( "CLASS_SENTRY_UNLOCK" ) +" DRONES AS A SPECIALIST]"
+				int pointsLeft = GetConVarInt( "CLASS_SENTRY_UNLOCK" ) - specialistDrones[player]
+				sentText = "[SPAWN " + pointsLeft +" DRONES AS A SPECIALIST]"
 			}
 			break
 		case 12:
@@ -588,7 +611,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[GET " + GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) + " POINTS WITH A SPECTRE CLASS]"
+				int pointsLeft = GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) - (classscore8[player] + classscore10[player])
+				sentText = "[GET " + pointsLeft + " POINTS WITH A SPECTRE CLASS]"
 			}
 			break
 		case 13:
@@ -598,7 +622,8 @@ void function sendClassMessage( entity player, int classNum )
 			}
 			else
 			{
-				sentText = "[GET " + GetConVarInt( "CLASS_PILOT_UNLOCK" ) + " POINTS AS A GRUNT]"
+				int pointsLeft = GetConVarInt( "CLASS_PILOT_UNLOCK" ) - gruntScore[player]
+				sentText = "[GET " + pointsLeft + " POINTS AS A GRUNT]"
 			}
 			break
 		case 14:
@@ -610,6 +635,17 @@ void function sendClassMessage( entity player, int classNum )
 			{
 				string classType = opPilotText()
 				sentText = "[GET A " + GetConVarInt( "CLASS_OPPILOT_UNLOCK_STREAK" ) +" KILLSTREAK" + classType + "]"
+			}
+			break
+		case 15:
+			if ( hemlokPoints[player] >= GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) )
+			{
+				sentText = "S2ymi's Hemlok Rifleman\nHealth: 125\nPrimary: Hemlok Rifle\nUpgrades: HCOG -> Extended Ammo -> Quickscope -> Amped Weapons\nPistol: Modified Hemlok SMG (Volt)\nAnti-Titan: Armor-Piercing Hemlok\nOrdinance: Frag Grenade\nAbilities: None"
+			}
+			else
+			{
+				int pointsLeft = GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) - hemlokPoints[player]
+				sentText = "[GET " + pointsLeft + " POINTS WITH A HEMLOK RIFLE]"
 			}
 			break
 		default:
@@ -664,7 +700,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Sniper - " + GetConVarInt("COST_SNIPER") + " points";
 			}
 			else {
-				returnClass = "[GET " + GetConVarInt("CLASS_SNIPER_UNLOCK") + " POINTS AS A MARKSMAN]";
+				int pointsLeft = GetConVarInt( "CLASS_SNIPER_UNLOCK" ) - classscore3[player]
+				returnClass = "[GET " + pointsLeft + " POINTS AS A MARKSMAN]";
 			}
 			break;
 		case 5:
@@ -681,7 +718,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Spectre - " + GetConVarInt("COST_SPECTRE") + " points";
 			}
 			else {
-				returnClass = "[GET " + GetConVarInt("CLASS_SPECTRE_UNLOCK") + " POINTS AS A GRUNT]";
+				int pointsLeft = GetConVarInt( "CLASS_SPECTRE_UNLOCK" ) - gruntScore[player]
+				returnClass = "[GET " + pointsLeft + " POINTS AS A GRUNT]"
 			}
 			break;
 		case 9:
@@ -689,7 +727,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Blast Spectre - " + GetConVarInt("COST_BLAST_SPECTRE") + " points";
 			}
 			else {
-				returnClass = "[GET " + GetConVarInt("CLASS_BLASTSPECTRE_UNLOCK") + " POINTS AS A SPECTRE LEADER]";
+				int pointsLeft = GetConVarInt( "CLASS_BLASTSPECTRE_UNLOCK" ) - classscore12[player]
+				returnClass = "[GET " + pointsLeft + " POINTS AS A SPECTRE LEADER]"
 			}
 			break;
 		case 10:
@@ -697,7 +736,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Sniper Spectre - " + GetConVarInt("COST_SNIPESPECTRE") + " points";
 			}
 			else {
-				returnClass = "[GET " + GetConVarInt("CLASS_SNIPESPECTRE_UNLOCK") + " POINTS AS A SPECTRE]";
+				int pointsLeft = GetConVarInt( "CLASS_SNIPESPECTRE_UNLOCK" ) - classscore8[player]
+				returnClass = "[GET " + pointsLeft +" POINTS AS A SPECTRE]"
 			}
 			break;
 		case 11:
@@ -705,7 +745,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Sentry Technician - " + GetConVarInt("COST_SENTRY") + " points";
 			}
 			else {
-				returnClass = "[SPAWN " + GetConVarInt("CLASS_SENTRY_UNLOCK") + " DRONES AS A SPECIALIST]";
+				int pointsLeft = GetConVarInt( "CLASS_SENTRY_UNLOCK" ) - specialistDrones[player]
+				returnClass = "[SPAWN " + pointsLeft +" DRONES AS A SPECIALIST]"
 			}
 			break;
 		case 12:
@@ -713,7 +754,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Spectre Leader - " + GetConVarInt("COST_SPECTRE_LEADER") + " points";
 			}
 			else {
-				returnClass = "[GET " + GetConVarInt("CLASS_SPECTRELEADER_UNLOCK") + " POINTS WITH A SPECTRE CLASS]";
+				int pointsLeft = GetConVarInt( "CLASS_SPECTRELEADER_UNLOCK" ) - (classscore8[player] + classscore10[player])
+				returnClass = "[GET " + pointsLeft + " POINTS WITH A SPECTRE CLASS]"
 			}
 			break;
 		case 13:
@@ -721,7 +763,8 @@ function determineClass( int classNum, entity player )
 				returnClass = "Pilot - " + GetConVarInt("COST_PILOT") + " points";
 			}
 			else {
-				returnClass = "[GET " + GetConVarInt("CLASS_PILOT_UNLOCK") + " POINTS AS A GRUNT]";
+				int pointsLeft = GetConVarInt( "CLASS_PILOT_UNLOCK" ) - gruntScore[player]
+				returnClass = "[GET " + pointsLeft + " POINTS AS A GRUNT]"
 			}
 			break;
 		case 14:
@@ -733,6 +776,17 @@ function determineClass( int classNum, entity player )
 				returnClass = "[GET A " + GetConVarInt("CLASS_OPPILOT_UNLOCK_STREAK") +" KILLSTREAK" + classType + "]";
 			}
 			break;
+		case 15:
+			if ( hemlokPoints[player] >= GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) )
+			{
+				returnClass = "Hemlok Rifleman - " + GetConVarInt("COST_HEMLOK") + " points"
+			}
+			else
+			{
+				int pointsLeft = GetConVarInt( "CLASS_HEMLOK_UNLOCK" ) - hemlokPoints[player]
+				returnClass = "[GET " + pointsLeft + " POINTS WITH A HEMLOK RIFLE]"
+			}
+			break
 		default:
 			returnClass = "[ERROR]";
 			print("Invalid Classnumber to return Class, received " + classNum);
@@ -886,6 +940,8 @@ function determineClassScore( int classNum )
 			return GetConVarInt( "COST_PILOT" )
 		case 14: // Next-Gen Pilot
 			return GetConVarInt( "COST_OPPILOT" )
+		case 15: // Hemlok Rifleman
+			return GetConVarInt( "COST_HEMLOK" )
 		default:
 			print("Invalid Classnumber to return Score, recieved " + string(classNum))
 			return 80
@@ -1050,7 +1106,12 @@ void function OnPlayerRespawned( entity player )
 void function OnPlayerRespawned_Threaded( entity player )
 {
 	bool dropShipStatus =  checkDropShipStatus(player) //Spawn in dropship if one is available
-	if (!hasSpawned[player])
+
+	if ( !gruntSpawnoverride )
+	{
+		print("Skipping grunt spawn sequence")
+	}
+	else if (!hasSpawned[player])
 	{
 		print("Respawned normally because it was their first spawn (failsafe)")
 	}
@@ -1295,7 +1356,7 @@ void function OnGruntKilled( entity victim, entity attacker, var damageInfo ) //
 		}
 		else // Sets to "grunt"
 		{
-			if ( currentClass[attacker] == 0 || currentClass[attacker] == 1 || currentClass[attacker] == 2 || currentClass[attacker] == 3 || currentClass[attacker] == 4 || currentClass[attacker] == 5 || currentClass[attacker] == 6 || currentClass[attacker] == 11 )
+			if ( currentClass[attacker] == 0 || currentClass[attacker] == 1 || currentClass[attacker] == 2 || currentClass[attacker] == 3 || currentClass[attacker] == 4 || currentClass[attacker] == 5 || currentClass[attacker] == 6 || currentClass[attacker] == 11 || currentClass[attacker] == 15)
 			{
 				rifleStreak[attacker] += 1
 				print("Increased rifleman streak")
@@ -1645,7 +1706,18 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				pMods = "Captain"
 				break
 			case 7: //Specialist
-				pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
+				if ( GetConVarString( "SPECIALIST_PLAYER_MODELS" ) == "robot" ) {
+					pModel = "models/humans/pilots/pilot_light_ged_m.mdl"
+				} else {
+					if (player.GetTeam() == TEAM_MILITIA)
+					{
+						pModel = "models/humans/grunts/imc_grunt_smg.mdl"
+					}
+					else
+					{
+						pModel = "models/humans/grunts/mlt_grunt_smg.mdl"
+					}
+				}
 				popUpText = "Spawning as Specialist"
 				player.GiveOffhandWeapon( "mp_weapon_grenade_emp", OFFHAND_ORDNANCE, ["grunt_mode"] )
 				secondary = "mp_weapon_shotgun_pistol"
@@ -1795,6 +1867,35 @@ void function BecomesGrunt_Class( entity player, int classNum )
 				string playerName = player.GetPlayerName()
 				Chat_ServerBroadcast(playerName + " has become a Next-Gen Pilot!",true)
 				break
+			case 15: // Hemlock Rifleman
+				if( player.GetTeam() == TEAM_IMC )
+				{
+					pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
+				}
+				else
+				{
+					pModel = "models/humans/grunts/mlt_grunt_rifle.mdl"
+				}
+				popUpText = "Spawning as Hemlock Rifleman"
+				
+				string weapon = "mp_weapon_hemlok"
+				secondary = "mp_weapon_hemlok_smg"
+				pMods = "Captain" // Health buff
+
+				if ( classscore15[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE_2" ) )
+					player.GiveWeapon(weapon, ["hcog","extended_ammo","pas_fast_ads","burn_mod_hemlok"])
+				else if ( classscore15[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL" ) )
+					player.GiveWeapon(weapon, ["hcog","extended_ammo","pas_fast_ads"])
+				else if ( classscore15[player] >= GetConVarInt( "GR_ATTACHMENT_LEVEL_MULTIPLE" ) )
+					player.GiveWeapon(weapon, ["hcog","extended_ammo"])
+				else if ( classscore15[player] >= GetConVarInt( "GR_OPTICS_LEVEL" ) )
+					player.GiveWeapon(weapon, ["hcog"])
+				else
+					player.GiveWeapon(weapon)
+
+				player.GiveOffhandWeapon( "mp_weapon_frag_grenade", OFFHAND_ORDNANCE, ["grunt_mode"] )
+				antiTitanTrue = true
+				break
 			default:
 				print("Invalid Class Number: Recieved " + string(classNum))
 				pModel = "models/humans/grunts/imc_grunt_rifle.mdl"
@@ -1807,13 +1908,21 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		}
 		SendHudMessage(player, "",  -1, -0.2, 255, 255, 255, 255, 0.15, 6, 1) //Blank to remove class info
 		NSSendPopUpMessageToPlayer( player, popUpText)
-		if ( classNum != 14 )
+		if ( classNum != 14 && classNum != 15) {
 			player.GiveWeapon( secondary )
-		else
-			player.GiveWeapon( "mp_weapon_smart_pistol", ["extended_ammo","pas_run_and_gun","tactical_cdr_on_kill"])
+		}
+		else {
+			if (classNum == 14)
+				player.GiveWeapon( "mp_weapon_smart_pistol", ["extended_ammo","pas_run_and_gun","tactical_cdr_on_kill"])
+			if (classNum == 15)
+				player.GiveWeapon( "mp_weapon_hemlok_smg", ["pas_fast_swap", "pas_fast_ads", "pas_fast_reload", "grunt_secondary", "holosight"])
+		}
 		if (antiTitanTrue == true)
 		{
-			if (antiTitan == "mp_weapon_arc_launcher" && pMods == "Pilot")
+			if ( classNum == 15 ) {
+				player.GiveWeapon( "mp_weapon_hemlok", ["anti_titan","redline_sight"])
+			}
+			else if (antiTitan == "mp_weapon_arc_launcher" && pMods == "Pilot")
 			{
 				if ( classNum == 14)
 					player.GiveWeapon( antiTitan, ["pas_fast_reload","pas_fast_ads","tactical_cdr_on_kill","at_unlimited_ammo","burn_mod_arc_launcher"] )
@@ -1860,6 +1969,10 @@ void function BecomesGrunt_Class( entity player, int classNum )
 		else if (pMods == "Tech")
 		{
 			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["non_mechanical", "disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement", "specialist_health"])
+		}
+		else if (pMods == "Hemlok")
+		{
+			player.SetPlayerSettingsWithMods( player.GetPlayerSettings(), ["non_mechanical", "specialist_health", "disable_doublejump", "disable_wallrun", "less_powerful_gilde","pas_stealth_movement"])
 		}
 		else //Normal Grunts
 		{
