@@ -1234,7 +1234,7 @@ void function StartKillerOutline( entity victim, entity attacker, var damageInfo
 void function DropGrenade( entity victim, entity attacker, var damageInfo  ) {
 	if ( IsValid(victim) ) {
 		entity offHandName = victim.GetOffhandWeapon(OFFHAND_ORDNANCE)
-		if ( offHandName.GetWeaponClassName() == "mp_weapon_grenade_gravity") // Don't drop gravstar, will likely cause a crash if picked up because of weapon mods
+		if ( IsValid(offHandName) && offHandName.GetWeaponClassName() == "mp_weapon_grenade_gravity") // Don't drop gravstar, will likely cause a crash if picked up because of weapon mods
 			return
 		vector droppoint = victim.GetOrigin()
 		entity grenade = CreateWeaponEntityByNameWithPhysics( offHandName.GetWeaponClassName(), droppoint, <0,0,0> )

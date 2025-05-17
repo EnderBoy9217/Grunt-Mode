@@ -3,6 +3,9 @@
 # TODO:
 * Add despawn timer to grenades
 
+# 2.13.2
+* Fixed crash related to gravstars from dead pilots
+
 # 2.13.1
 * Updated to support the new "Switch teams" option introduced in 1.29.0 (Northstar Mods#872) (AI may be marked oddly but thats a Northstar issue for now)
 * Fixed issue with dropships getting crushed
