@@ -308,7 +308,7 @@ void function SpawnerExtend( int team )
 			// TITANS
 			if ( file.titans[ index ] )
 			{
-				array< entity > points = SpawnPoints_GetDropPod()
+				array< entity > points = SpawnPoints_GetTitan()
 				if ( titanCount < GetConVarInt( "GRTDM_TITANS" ) )
 				{
 					entity node = points[ GetSpawnPointIndex( points, team ) ]
@@ -319,7 +319,7 @@ void function SpawnerExtend( int team )
 			// PILOTS
 			if ( file.pilots[ index ] )
 			{
-				array< entity > points = SpawnPoints_GetDropPod()
+				array< entity > points = SpawnPoints_GetTitan()
 				if ( pilotCount < GetConVarInt( "GRTDM_PILOTS" ) )
 				{
 					entity node = points[ GetSpawnPointIndex( points, team ) ]

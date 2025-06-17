@@ -70,6 +70,9 @@ void function RespawnShip_Init()
 
 bool function CheckValidMap( entity player )
 {
+	return true
+
+	// With new spawn locations, we are re-enabling all maps for now
 	string currentMap = GetMapName()
 	print(currentMap)
 	foreach (map in DROPSHIP_VALID_MAPS) {
@@ -232,7 +235,7 @@ bool function checkDropShipStatus( entity player )
 
 entity function getValidNode( int team, entity player )
 {
-	array< entity > spawnPoint = SpawnPoints_GetDropPod()
+	array< entity > spawnPoint = SpawnPoints_GetTitan()
 	for ( int i = 0; i < 20; i++ ) //20 tries before it gives something random
 		{
 			
@@ -242,6 +245,7 @@ entity function getValidNode( int team, entity player )
 				return node
 		}
 	entity node = spawnPoint[ GetSpawnPointIndex( spawnPoint, team ) ]
+	return node
 }
 
 entity function CreateRespawnShip( int team, entity player )
