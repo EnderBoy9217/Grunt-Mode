@@ -1,4 +1,4 @@
-### Grunt Mode 2.12.1
+### Grunt Mode 2.13.1
 
 Please report any bugs or give feedback in this discord
 Also join it to get access to updates early and talk with developers:

@@ -36,7 +36,7 @@ global struct NPCPilotStruct
 	int spawnflags
 	float accuracy
 	float proficieny
-	int health // why respawn?
+	float health
 	float physDamageScale
 	string weapon
 	array<string> weaponMods
@@ -644,7 +644,7 @@ void function NpcPilotBecomesTitan( entity pilot, entity titan )
 
 	titanSoul.soul.seatedNpcPilot.isInvulnerable		= pilot.IsInvulnerable()
 
-	titanSoul.soul.seatedNpcPilot.health				= pilot.GetMaxHealth()
+	titanSoul.soul.seatedNpcPilot.health 				= pilot.GetMaxHealth().tofloat()
 
 	titan.SetTitle( titanSoul.soul.seatedNpcPilot.title )
 
