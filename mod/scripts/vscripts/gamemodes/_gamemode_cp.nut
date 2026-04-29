@@ -6,9 +6,6 @@ global function DEV_PrintHardpointsInfo
 
 //NOTICE: ALL "PGS_ASSAULT_SCORE instances have been replaced with PGS_DEFENSE SCORE for gruntmode compatability"
 
-// needed for sh_gamemode_cp_dialogue
-global array<entity> HARDPOINTS
-
 struct HardpointStruct
 {
 	entity hardpoint

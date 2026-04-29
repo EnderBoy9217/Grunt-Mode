@@ -1,4 +1,4 @@
-### Grunt Mode 2.12.1
+### Grunt Mode 2.13.4
 
 Please report any bugs or give feedback in this discord
 Also join it to get access to updates early and talk with developers:
@@ -53,5 +53,6 @@ Current Classes Include:
 **Sentry Technician** - A class that can deploy two automated sentrys to mow down the opposing team, also equipped with weapons effective against groups and titans
 
 **Spectre Leader** - A spectre class with a heavy arsenal and regenerating grenades
+
 
 **Pilot** - An expensive class we all know, pilots have increased mobility and firepower, along with a fully regenerating arsenal and a personal dropship to escort them onto the battlefield

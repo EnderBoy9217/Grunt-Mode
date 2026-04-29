@@ -1,7 +1,18 @@
 # Changelog
 
-# TODO:
-* Add despawn timer to grenades
+# 2.13.4
+* Fix crash caused by new Northstar Version
+* Fixed compatibilty with certain custom map mods
+
+# 2.13.3
+* Player dropships have been re-enabled for all maps (please report bugged spawns in the discord)
+* Switching teams from the main menu now kills the player
+* Fixed issue where players would have a pilot model again after switching teams
+* Titans now use new spawn locations
+* Titans will now spawn on their teams designated side of the map
+* Player dropships now use new spawn locations
+* Player dropships will now spawn on their teams designated side of the map
+* Fixed potential crash if it takes more than 20 tries for a dropship to find a valid drop location
 
 # 2.13.2
 * Fixed crash related to gravstars from dead pilots
